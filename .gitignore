@@ -1,0 +1,6 @@
+# For now, ignore driver packages
+micro_ros/
+cartographer_slam/
+
+# No VSCode please
+.vscode/

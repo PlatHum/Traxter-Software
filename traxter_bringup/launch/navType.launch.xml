@@ -1,0 +1,8 @@
+<launch>
+
+  <arg name="navType" default="manual" />
+  <group if="$(eval '\'$(var navType)\' == \'manual\'')">
+    <include file="$(find-pkg-share traxter_ps3_controller)/launch/ps3_controller.launch.py">
+    </include>
+  </group>
+</launch>

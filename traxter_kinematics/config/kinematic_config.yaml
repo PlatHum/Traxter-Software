@@ -1,0 +1,4 @@
+cmdVel_converter_node:
+    ros__parameters:
+        _wheel_radius: 0.0355
+        _wheel_base: 0.225
