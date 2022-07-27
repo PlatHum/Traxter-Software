@@ -1,0 +1,11 @@
+int32 accx
+int32 accy
+int32 accz
+int32 gyrox
+int32 gyroy
+int32 gyroz
+int32 q0
+int32 q1
+int32 q2
+int32 q3
+uint8 status
