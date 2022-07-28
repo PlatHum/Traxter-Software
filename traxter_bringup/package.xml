@@ -11,7 +11,7 @@
 
   <depend>rclcpp</depend>
   <depend>traxter_description</depend>
-  <depend>traxter_ign_gazebo</depend>
+<!--   <depend>traxter_ign_gazebo</depend> -->
  <!--  <depend>traxter_odometry</depend> -->
   <depend>traxter_imu_interpreter</depend>
   <depend>traxter_kinematics</depend>
