@@ -1,0 +1,10 @@
+cmdVel_converter_node:
+    ros__parameters:
+        _wheel_radius: 0.0355
+        _wheel_base: 0.225
+        _ticks_per_meter: 1613
+        _ticks_per_wheel_rev: 360
+        _initial_x: 0.0
+        _initial_y: 0.0
+        _initial_theta: 0.0
+        _odometry_covariance: [.01, .01, .01, .01, .01, .01,.165,.165,.165,.165,.165,.165]

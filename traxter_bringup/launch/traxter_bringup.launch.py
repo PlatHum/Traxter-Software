@@ -23,9 +23,11 @@ def generate_launch_description():
     world = LaunchConfiguration('world')
     runType = LaunchConfiguration('runType')
     navType = LaunchConfiguration('navType')
+    odomType = LaunchConfiguration('odomType')
+    configFile = LaunchConfiguration('configFile')
     runType_arg = DeclareLaunchArgument(
           'runType',
-          default_value="fullSimul",
+          default_value="realHard",
           description='Type of run. [fullSimul,inLoop,realHard]')
 
     world_arg = DeclareLaunchArgument(
@@ -38,17 +40,28 @@ def generate_launch_description():
           default_value='manual',
           description='Navigation type. [ manual , auto ]')
 
-    traxter_description_launch = IncludeLaunchDescription(
-      PythonLaunchDescriptionSource([os.path.join(
-         get_package_share_directory('traxter_description'), 'launch',
-         'traxter_description.launch.py')])
-      )
+    odomType_arg = DeclareLaunchArgument(
+          'odomType',
+          default_value='classicTrapezoidal',
+          description='Odometry calculation type. [ classicEuler , classicTrapezoidal , classicExact , Experimental , Debug ]')
+
+    configFile_arg = DeclareLaunchArgument(
+          'configFile',
+          default_value='default',
+          description='What config parameter file to load from config directory of bringup.')
+
+    #traxter_description_launch = IncludeLaunchDescription(
+     # PythonLaunchDescriptionSource([os.path.join(
+      #   get_package_share_directory('traxter_description'), 'launch',
+       #  'traxter_description.launch.py')])
+      #)
 
     runType_launch = IncludeLaunchDescription(
             [os.path.join(get_package_share_directory('traxter_bringup'), 'launch','runType.launch.xml')],
             launch_arguments={
                 'world': world,
-                'runType': runType
+                'runType': runType,
+                'configFile':configFile
             }.items()
         )
 
@@ -59,14 +72,26 @@ def generate_launch_description():
             }.items()
         )
 
+    odomType_launch = IncludeLaunchDescription(
+            [os.path.join(get_package_share_directory('traxter_odometry'), 'launch','traxter_odometry.launch.xml')],
+            launch_arguments={
+                'odomType': odomType,
+                'configFile':configFile,
+                'runType': runType
+            }.items()
+        )
+
 
     return LaunchDescription([
         world_arg,
         runType_arg,
         navType_arg,
-        traxter_description_launch,
+        odomType_arg,
+        configFile_arg,
+        #traxter_description_launch,
         runType_launch,
-        navType_launch
+        navType_launch,
+        odomType_launch
     ])
 
     #'ign_args': ['-r -v 4 ', PathJoinSubstitution([pkg_traxter_ign_gazebo, 'worlds', world])]

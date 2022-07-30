@@ -90,20 +90,20 @@
             <surface>
                 <contact>
                     <ode>
-                        <kp>10000.0</kp>
+                        <kp>100.0</kp>
                         <kd>1.0</kd>
                     </ode>
                 </contact>
-            <friction>
+<!--             <friction>
                     <ode>
                         <mu>10</mu>
                         <mu2>1</mu2>
                         <slip1>0.01</slip1>
                         <slip2>0.2</slip2>
                         <fdir1>0 0 1</fdir1>
-            </ode>
-          </friction>
-        </surface>
+                    </ode>
+                </friction> -->
+            </surface>
         </collision>
         <xacro:inertial_cylinder mass="${wheel_mass}" length="${wheel_width}" radius="${wheel_radius}">
             <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -135,11 +135,11 @@
             <surface>
                 <contact>
                     <ode>
-                        <kp>10000.0</kp>
+                        <kp>100.0</kp>
                         <kd>1.0</kd>
                     </ode>
                 </contact>
-            <friction>
+<!--             <friction>
                     <ode>
                         <mu>10</mu>
                         <mu2>1</mu2>
@@ -147,9 +147,9 @@
                         <slip2>0.2</slip2>
                         <fdir1>0 0 1</fdir1>
                 
-            </ode>
-          </friction>
-        </surface>         
+                    </ode>
+                </friction> -->
+            </surface>         
         </collision>
         <xacro:inertial_cylinder mass="${wheel_mass}" length="${wheel_width}" radius="${wheel_radius}">
             <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -181,11 +181,11 @@
             <surface>
                 <contact>
                     <ode>
-                        <kp>10000.0</kp>
+                        <kp>100.0</kp>
                         <kd>1.0</kd>
                     </ode>
                 </contact>
-            <friction>
+<!--             <friction>
                     <ode>
                         <mu>10</mu>
                         <mu2>1</mu2>
@@ -193,9 +193,9 @@
                         <slip2>0.2</slip2>
                         <fdir1>0 0 1</fdir1>
                 
-            </ode>
-          </friction>
-        </surface>           
+                    </ode>
+                </friction> -->
+            </surface>           
         </collision>
         <xacro:inertial_cylinder mass="${wheel_mass}" length="${wheel_width}" radius="${wheel_radius}">
             <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -227,11 +227,11 @@
             <surface>
                 <contact>
                     <ode>
-                        <kp>10000.0</kp>
+                        <kp>100.0</kp>
                         <kd>1.0</kd>
                     </ode>
                 </contact>
-            <friction>
+<!--             <friction>
                     <ode>
                         <mu>10</mu>
                         <mu2>1</mu2>
@@ -239,9 +239,9 @@
                         <slip2>0.2</slip2>
                         <fdir1>0 0 1</fdir1>
                 
-            </ode>
-          </friction>
-        </surface>            
+                    </ode>
+                </friction> -->
+            </surface>            
         </collision>
         <xacro:inertial_cylinder mass="${wheel_mass}" length="${wheel_width}" radius="${wheel_radius}">
             <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -479,10 +479,10 @@
 
         <gazebo>
             <plugin name='ignition::gazebo::systems::JointStatePublisher' filename='libignition-gazebo-joint-state-publisher-system.so'>
-<!--                 <joint_name>rear_left_wheel_joint</joint_name>
-                <joint_name>rear_right_wheel_joint</joint_name> -->
                 <joint_name>front_left_wheel_joint</joint_name>
                 <joint_name>front_right_wheel_joint</joint_name>
+                <joint_name>rear_left_wheel_joint</joint_name>
+                <joint_name>rear_right_wheel_joint</joint_name>
             </plugin>
         </gazebo>
 

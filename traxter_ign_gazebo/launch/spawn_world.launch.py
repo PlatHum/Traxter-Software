@@ -37,8 +37,8 @@ def generate_launch_description():
 
     
 
-    print("IGN_GAZEBO_RESOURCE_PATH=="+str(os.environ["IGN_GAZEBO_RESOURCE_PATH"]))
-    print("IGN_GAZEBO_PLUGIN_PATH=="+str(os.environ["IGN_GAZEBO_PLUGIN_PATH"]))
+    #print("IGN_GAZEBO_RESOURCE_PATH=="+str(os.environ["IGN_GAZEBO_RESOURCE_PATH"]))
+    #print("IGN_GAZEBO_PLUGIN_PATH=="+str(os.environ["IGN_GAZEBO_PLUGIN_PATH"]))
 
     world = LaunchConfiguration('world')
 

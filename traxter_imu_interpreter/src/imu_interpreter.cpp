@@ -22,11 +22,7 @@ public:
     subscription_ = this->create_subscription<traxter_msgs::msg::LightImu>(
       "traxter/imu/data/unprocessed", qos, std::bind(&imuInterpreter::topic_callback, this, _1));
 
-    publisher_ = this->create_publisher<sensor_msgs::msg::Imu>("traxter/imu/data/processed",1);
-
-/*     standard_imu_message.header.frame_id.data = (char *)"imu_link";
-    standard_imu_message.header.frame_id.size = sizeof("imu_link");
-    standard_imu_message.header.frame_id.capacity = sizeof("imu_link"); */
+    publisher_ = this->create_publisher<sensor_msgs::msg::Imu>("imu",1);
     standard_imu_message.header.frame_id="imu_link";
   }
 
@@ -52,7 +48,7 @@ private:
     standard_imu_message.linear_acceleration.x=msg->accx/100.0;
     standard_imu_message.linear_acceleration.y=msg->accy/100.0;
     standard_imu_message.linear_acceleration.z=msg->accz/100.0;
-    standard_imu_message.header.stamp=rclcpp::Clock().now();
+    standard_imu_message.header.stamp=this->now();
 
     publisher_->publish(standard_imu_message);
   }
