@@ -50,7 +50,7 @@ def generate_launch_description():
                 ('/world/traxter_world/model/traxter/link/base_link/sensor/rgbd_camera/depth_image','/traxter/simulation/camera/depth_image'),
                 ('/world/traxter_world/model/traxter/link/base_link/sensor/rgbd_camera/camera_info','/traxter/simulation/camera/camera_info'),
                 #('/model/traxter/tf','/tf')
-                #('/imu','/traxter/simulation/imu')
+                ('/imu','/traxter/simulation/imu')
             ]
 
 

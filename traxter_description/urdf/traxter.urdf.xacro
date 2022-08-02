@@ -94,7 +94,7 @@
                         <kd>1.0</kd>
                     </ode>
                 </contact>
-<!--             <friction>
+            <friction>
                     <ode>
                         <mu>10</mu>
                         <mu2>1</mu2>
@@ -102,7 +102,7 @@
                         <slip2>0.2</slip2>
                         <fdir1>0 0 1</fdir1>
                     </ode>
-                </friction> -->
+                </friction>
             </surface>
         </collision>
         <xacro:inertial_cylinder mass="${wheel_mass}" length="${wheel_width}" radius="${wheel_radius}">
@@ -139,7 +139,7 @@
                         <kd>1.0</kd>
                     </ode>
                 </contact>
-<!--             <friction>
+            <friction>
                     <ode>
                         <mu>10</mu>
                         <mu2>1</mu2>
@@ -148,7 +148,7 @@
                         <fdir1>0 0 1</fdir1>
                 
                     </ode>
-                </friction> -->
+                </friction>
             </surface>         
         </collision>
         <xacro:inertial_cylinder mass="${wheel_mass}" length="${wheel_width}" radius="${wheel_radius}">
@@ -185,7 +185,7 @@
                         <kd>1.0</kd>
                     </ode>
                 </contact>
-<!--             <friction>
+            <friction>
                     <ode>
                         <mu>10</mu>
                         <mu2>1</mu2>
@@ -194,7 +194,7 @@
                         <fdir1>0 0 1</fdir1>
                 
                     </ode>
-                </friction> -->
+                </friction>
             </surface>           
         </collision>
         <xacro:inertial_cylinder mass="${wheel_mass}" length="${wheel_width}" radius="${wheel_radius}">
@@ -231,7 +231,7 @@
                         <kd>1.0</kd>
                     </ode>
                 </contact>
-<!--             <friction>
+            <friction>
                     <ode>
                         <mu>10</mu>
                         <mu2>1</mu2>
@@ -240,7 +240,7 @@
                         <fdir1>0 0 1</fdir1>
                 
                     </ode>
-                </friction> -->
+                </friction>
             </surface>            
         </collision>
         <xacro:inertial_cylinder mass="${wheel_mass}" length="${wheel_width}" radius="${wheel_radius}">
@@ -421,17 +421,6 @@
                 <child_frame_id>base_link</child_frame_id>                                  
             </plugin>        
         </gazebo> -->
-
-<!--         <gazebo>
-            <plugin filename="libignition-gazebo-odometry-publisher-system.so"
-                name="ignition::gazebo::systems::OdometryPublisher">
-                <odom_frame>odom</odom_frame>
-                <robot_base_frame>base_footprint</robot_base_frame>
-                <odom_topic>odometry/noisy</odom_topic>
-                <gaussian_noise>0.05</gaussian_noise>                               
-            </plugin>        
-        </gazebo> -->
-
         <gazebo>
             <plugin filename="libignition-gazebo-odometry-publisher-system.so"
                 name="ignition::gazebo::systems::OdometryPublisher">
@@ -531,58 +520,58 @@
               <angular_velocity>
                 <x>
                   <noise type="gaussian">
-                    <mean>0.0</mean>
-                    <stddev>2e-4</stddev>
-                    <bias_mean>0.0000075</bias_mean>
-                    <bias_stddev>0.0000008</bias_stddev>
+                    <mean>0.001</mean>
+                    <stddev>2e-3</stddev>
+                    <bias_mean>0.000075</bias_mean>
+                    <bias_stddev>0.000008</bias_stddev>
                   </noise>
                 </x>
                 <y>
                   <noise type="gaussian">
-                    <mean>0.0</mean>
-                    <stddev>2e-4</stddev>
-                    <bias_mean>0.0000075</bias_mean>
-                    <bias_stddev>0.0000008</bias_stddev>
+                    <mean>0.002</mean>
+                    <stddev>3e-3</stddev>
+                    <bias_mean>0.0000095</bias_mean>
+                    <bias_stddev>0.0000012</bias_stddev>
                   </noise>
                 </y>
                 <z>
                   <noise type="gaussian">
-                    <mean>0.0</mean>
-                    <stddev>2e-4</stddev>
-                    <bias_mean>0.0000075</bias_mean>
-                    <bias_stddev>0.0000008</bias_stddev>
+                    <mean>0.006</mean>
+                    <stddev>2e-3</stddev>
+                    <bias_mean>0.000075</bias_mean>
+                    <bias_stddev>0.000008</bias_stddev>
                   </noise>
                 </z>
               </angular_velocity>
               <linear_acceleration>
                 <x>
                   <noise type="gaussian">
-                    <mean>0.0</mean>
+                    <mean>0.00012</mean>
                     <stddev>1.7e-2</stddev>
-                    <bias_mean>0.1</bias_mean>
+                    <bias_mean>0.01</bias_mean>
                     <bias_stddev>0.001</bias_stddev>
                   </noise>
                 </x>
                 <y>
                   <noise type="gaussian">
-                    <mean>0.0</mean>
+                    <mean>0.00015</mean>
                     <stddev>1.7e-2</stddev>
-                    <bias_mean>0.1</bias_mean>
+                    <bias_mean>0.01</bias_mean>
                     <bias_stddev>0.001</bias_stddev>
                   </noise>
                 </y>
                 <z>
                   <noise type="gaussian">
-                    <mean>0.0</mean>
+                    <mean>0.00012</mean>
                     <stddev>1.7e-2</stddev>
-                    <bias_mean>0.1</bias_mean>
+                    <bias_mean>0.01</bias_mean>
                     <bias_stddev>0.001</bias_stddev>
                   </noise>
                 </z>
               </linear_acceleration>
             </imu>
             <always_on>1</always_on>
-            <update_rate>50</update_rate>
+            <update_rate>70</update_rate>
           </sensor>
 
     </gazebo>

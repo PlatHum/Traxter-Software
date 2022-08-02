@@ -1,21 +1,15 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>traxter_bringup</name>
+  <name>traxter_robot_localization</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="francisco@todo.todo">francisco</maintainer>
+  <maintainer email="francisco.vpg@gmail.com">francisco</maintainer>
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
-  <depend>traxter_description</depend>
-  <depend>traxter_ign_gazebo</depend>
-  <depend>traxter_odometry</depend>
-  <depend>traxter_imu_interpreter</depend>
-  <depend>traxter_kinematics</depend>
-  <depend>traxter_ps3_controller</depend>
   <depend>robot_localization</depend>
 
   <test_depend>ament_lint_auto</test_depend>

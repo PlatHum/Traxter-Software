@@ -9,6 +9,7 @@
 #include <math.h>
 #include <limits.h>
 using std::placeholders::_1;
+using namespace std::chrono_literals;
 
 class odometryPublisher : public rclcpp::Node
 {
@@ -19,15 +20,19 @@ public:
   {
 
     this->declare_parameter("_run_type", 2);//0 full simulation, 1 hardware in the loop, 2 real hardware
-    this->declare_parameter("_odom_type", 1);//0 classic euler, 1 classic trapezoidal, 2 classic exact, 3 experimental, 4 debug
     this->declare_parameter("_wheel_radius", 0.0355);
     this->declare_parameter("_wheel_base", 0.225);
-    this->declare_parameter("_ticks_per_meter", 1613);//assume nominal if not especified
     this->declare_parameter("_ticks_per_wheel_rev", 360);
     this->declare_parameter("_initial_x", 0.0);
     this->declare_parameter("_initial_y", 0.0);
     this->declare_parameter("_initial_theta", 0.00000000001);
-    this->declare_parameter("_odometry_covariance", std::vector<double>{.01, .01, .01, .01, .01, .01,.165,.165,.165,.165,.165,.165});
+    this->declare_parameter("_alpha_L", 1.0);
+    this->declare_parameter("_alpha_R", 1.0);
+    this->declare_parameter("_k_R", 0.1);
+    this->declare_parameter("_k_L", 0.1);
+    this->declare_parameter("_E_D", 1.0);
+    this->declare_parameter("_E_B", 1.0);
+    this->declare_parameter("_update_odometry", false);
     rclcpp::QoS qos(3);
     qos.keep_last(3);
     qos.best_effort();
@@ -36,20 +41,24 @@ public:
     this->get_parameter("_wheel_radius", WHEEL_RADIUS);
     this->get_parameter("_wheel_base", WHEEL_BASE);
     this->get_parameter("_run_type", RUN_TYPE);
-    this->get_parameter("_odom_type", ODOM_TYPE);
-    this->get_parameter("_ticks_per_meter", TICKSPERMETER);
     this->get_parameter("_ticks_per_wheel_rev", TICKSPERWHEELREV);
     this->get_parameter("_initial_x", INITIAL_X);
     this->get_parameter("_initial_y", INITIAL_Y);
+    this->get_parameter("_alpha_R", ALPHA_R);
+    this->get_parameter("_alpha_L", ALPHA_L);
     this->get_parameter("_initial_theta", INITIAL_THETA);
-    this->get_parameter("_odometry_covariance", ODOMETRY_COVARIANCE);
+    this->get_parameter("_k_R", K_R);
+    this->get_parameter("_k_L", K_L);
+    this->get_parameter("_E_D", E_D);
+    this->get_parameter("_E_B", E_B);
+    this->get_parameter("_update_odometry", UPDATE_ODOM); 
 
     switch (RUN_TYPE)
     {
     case runTypeList::fullSimul:
         RCLCPP_INFO(this->get_logger(), "Odometry running in full Simulation mode.");
         simul_subscription_ = this->create_subscription<sensor_msgs::msg::JointState>(
-          "joint_states", 2, std::bind(&odometryPublisher::simulation_topic_callback, this, _1));
+          "joint_states", 1, std::bind(&odometryPublisher::simulation_topic_callback, this, _1));
       break;
     case runTypeList::inLoop: //hardware in the loop
         RCLCPP_INFO(this->get_logger(), "Odometry running in Hardware in the Loop mode.");
@@ -65,22 +74,19 @@ public:
       break;
     default:
         RCLCPP_FATAL(this->get_logger(), "Could not interpret run type. Could not construct odometry node.");
+        return;
       break;
     }
 
-  if (ODOM_TYPE==odomTypeList::debug){
-    classicEuler_odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("traxter/odometry/raw/classicEuler",1);
-    classicEuler_odom_path_publisher_=this->create_publisher<nav_msgs::msg::Path>("traxter/path/odometry/raw/classicEuler",1);
-    classicTrapezoidal_odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("traxter/odometry/raw/classicTrapezoidal",1);
-    classicTrapezoidal_odom_path_publisher_=this->create_publisher<nav_msgs::msg::Path>("traxter/path/odometry/raw/classicTrapezoidal",1);
-    classicExact_odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("traxter/odometry/raw/classicExact",1);
-    classicExact_odom_path_publisher_=this->create_publisher<nav_msgs::msg::Path>("traxter/path/odometry/raw/classicExact",1);
-    experimental_odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("traxter/odometry/raw/experimental",1);
-    experimental_odom_path_publisher_=this->create_publisher<nav_msgs::msg::Path>("traxter/path/odometry/raw/experimental",1);
-  }else{
+    if (UPDATE_ODOM){
+          update_timer_ = create_wall_timer( 500ms, std::bind(&odometryPublisher::update_timer_callback, this));
+          filter_subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
+          "traxter/odometry/filtered", 1, std::bind(&odometryPublisher::update_odom_callback, this, _1));
+    }
+    
+
     odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("traxter/odometry/raw",1);
     odom_path_publisher_=this->create_publisher<nav_msgs::msg::Path>("traxter/path/odometry/raw",1);
-  }
 
     setup_variables();
   };
@@ -89,61 +95,12 @@ private:
 
   void setup_variables()
   {
-    //linear
-    newOdom.pose.covariance[0] = ODOMETRY_COVARIANCE[0];
-    
-    newOdom.pose.covariance[7] = ODOMETRY_COVARIANCE[1];
-    
-    newOdom.pose.covariance[14] = ODOMETRY_COVARIANCE[2];
-    
 
-    newOdom.twist.covariance[0] = ODOMETRY_COVARIANCE[3];
-    
-    newOdom.twist.covariance[7] = ODOMETRY_COVARIANCE[4];
-    
-    newOdom.twist.covariance[14] = ODOMETRY_COVARIANCE[5];
-    
-
-    //angular
-    newOdom.pose.covariance[21] = ODOMETRY_COVARIANCE[6];
-    
-    newOdom.pose.covariance[28] = ODOMETRY_COVARIANCE[7];
-    
-    newOdom.pose.covariance[35] = ODOMETRY_COVARIANCE[8];
-    
-
-    newOdom.pose.covariance[21] = ODOMETRY_COVARIANCE[9];
-    
-    newOdom.pose.covariance[28] = ODOMETRY_COVARIANCE[10];
-    
-    newOdom.pose.covariance[35] = ODOMETRY_COVARIANCE[11];
-    
-
-    for(int i = 0; i<36; i++)
-    {
-       if(!(i == 0 || i == 7 || i == 14 || i == 21 || i == 28 || i== 35))
-       {
-          newOdom.pose.covariance[i] = 0;
-          
-          newOdom.twist.covariance[i] = 0; 
-          
-       }
-    }
-
-    oldXClassicEuler = INITIAL_X;
-    oldXClassicTrapezoidal = INITIAL_X;
-    oldXClassicExact = INITIAL_X;
-    oldXExperimental = INITIAL_X;
-
-    oldYClassicEuler = INITIAL_Y;
-    oldYClassicTrapezoidal = INITIAL_Y;
-    oldYClassicExact = INITIAL_Y;
-    oldYExperimental = INITIAL_Y;
-    
-    oldYawClassicEuler = INITIAL_THETA;
-    oldYawClassicTrapezoidal = INITIAL_THETA;
-    oldYawClassicExact = INITIAL_THETA;
-    oldYawExperimental = INITIAL_THETA;
+    effectiveWheelBase=WHEEL_BASE/E_B;
+    newOdom.pose.pose.position.x = INITIAL_X;
+    newOdom.pose.pose.position.y = INITIAL_Y;
+    oldOdom.pose.pose.position.x = INITIAL_X;
+    oldOdom.pose.pose.position.y = INITIAL_Y;
     tf2::Quaternion q;
     q.setRPY(0, 0, INITIAL_THETA);
 
@@ -151,48 +108,31 @@ private:
     newOdom.pose.pose.orientation.y = q.y();
     newOdom.pose.pose.orientation.z = q.z();
     newOdom.pose.pose.orientation.w = q.w();
-
-    newOdom.pose.pose.position.x = INITIAL_X;
-    newOdom.pose.pose.position.y = INITIAL_Y;
+    oldOdom.pose.pose.orientation.x = q.x();
+    oldOdom.pose.pose.orientation.y = q.y();
+    oldOdom.pose.pose.orientation.z = q.z();
+    oldOdom.pose.pose.orientation.w = q.w();
 
     newOdom.header.frame_id = "odom";
     newOdom.child_frame_id = "base_link";
 
     traxter_joints.name = {"front_left_wheel_joint", "front_right_wheel_joint", "rear_left_wheel_joint", "rear_right_wheel_joint"};   
     
-    oldTime=this->now();
-    newOdom.header.stamp = this->now();
-
-    switch (ODOM_TYPE){
-    case odomTypeList::classicEuler:
-      RCLCPP_INFO(this->get_logger(), "Selected classic euler odometry calculation.");
-      updateOdomPath(odomPathClassicEuler);
-      break;
-    case odomTypeList::classicTrapezoidal:
-      RCLCPP_INFO(this->get_logger(), "Selected classic trapezoidal odometry calculation.");
-      updateOdomPath(odomPathClassicTrapezoidal);
-      break;
-    case odomTypeList::classicExact:
-      RCLCPP_INFO(this->get_logger(), "Selected classic exact odometry calculation.");
-      updateOdomPath(odomPathClassicExact);
-      break;
-    case odomTypeList::experimental:
-      RCLCPP_INFO(this->get_logger(), "Selected experimental odometry calculation.");
-      updateOdomPath(odomPathExperimental);
-      break;
-    case odomTypeList::debug:
-      RCLCPP_INFO(this->get_logger(), "Selected debug mode odometry calculation.");
-      updateOdomPath(odomPathClassicEuler);
-      updateOdomPath(odomPathClassicTrapezoidal);
-      updateOdomPath(odomPathClassicExact);
-      updateOdomPath(odomPathExperimental);
-      break;
-    default:
-      RCLCPP_ERROR(this->get_logger(), "Could not interpret odometry calculation. Assuming classic trapezoidal.");
-      ODOM_TYPE=odomTypeList::classicTrapezoidal;
-      updateOdomPath(odomPathClassicTrapezoidal);
-      break;
-    }
+    motion_increment_covar[0][1]=0.0;
+    motion_increment_covar[1][0]=0.0;
+    pose_jacobian[0][0]=1.0;
+    pose_jacobian[0][1]=0.0;
+    pose_jacobian[1][0]=0.0;
+    pose_jacobian[1][1]=1.0;
+    pose_jacobian[2][1]=0.0;
+    pose_jacobian[2][0]=0.0;
+    pose_jacobian[2][2]=1.0;
+    motion_increment_jacobian[2][0]=1/effectiveWheelBase;
+    motion_increment_jacobian[2][1]=-1/effectiveWheelBase;
+    oldTime = this->now();
+    newOdom.header.stamp = oldTime;
+    oldOdom.header.stamp = newOdom.header.stamp;
+    updateOdomPath();
   };
 
    
@@ -205,9 +145,10 @@ private:
       oldRticks=0;
       oldLticks=0;
     }
-
+    newTime = this->now();
+    newOdom.header.stamp = newTime;;
     deltaEncoderTicks();
-    odometryAlgorithm();
+    runAlgorithm();
     publishJointState();
   };
 
@@ -218,21 +159,22 @@ private:
       
       if (msg->name[i]=="front_left_wheel_joint"){
 
-        newLticks=std::floor(msg->position[i]/(2*PI)*TICKSPERWHEELREV);
+        newLticks=std::floor(((msg->position[i]/(2*PI))*static_cast<double>(TICKSPERWHEELREV)));
         wanted_joint_counter++;
 
       }else if(msg->name[i]=="front_right_wheel_joint"){
 
-        newRticks=std::floor(msg->position[i]/(2*PI)*TICKSPERWHEELREV);
+        newRticks=std::floor(((msg->position[i]/(2*PI))*static_cast<double>(TICKSPERWHEELREV)));
         wanted_joint_counter++;
       }
       if (wanted_joint_counter==2){
         break;
       }
     }
-
+    newOdom.header.stamp = msg->header.stamp;
+    newTime = rclcpp::Time(msg->header.stamp.sec , msg->header.stamp.nanosec);
     deltaEncoderTicks();
-    odometryAlgorithm();
+    runAlgorithm();
   };
 
   void deltaEncoderTicks(){
@@ -263,72 +205,11 @@ private:
 
   };
 
-  void odometryAlgorithm(){
-
-    newTime=this->now();
-    newOdom.header.stamp = this->now();
-
-    switch (ODOM_TYPE){
-    case odomTypeList::classicEuler:
-      estimateVelocityUsingTicks();
-      classicEulerOdom();
-      odom_publisher_->publish(newOdom);
-      updateOdomPath(odomPathClassicEuler);
-      odom_path_publisher_->publish(odomPathClassicEuler);
-      break;
-    case odomTypeList::classicTrapezoidal:
-      estimateVelocityUsingTicks();
-      classicTrapezoidalOdom();
-      odom_publisher_->publish(newOdom);
-      updateOdomPath(odomPathClassicTrapezoidal);
-      odom_path_publisher_->publish(odomPathClassicTrapezoidal);
-      break;
-    case odomTypeList::classicExact:
-      estimateVelocityUsingTicks();
-      classicExactOdom();
-      odom_publisher_->publish(newOdom);
-      updateOdomPath(odomPathClassicExact);
-      odom_path_publisher_->publish(odomPathClassicExact);
-      break;
-    case odomTypeList::experimental:
-      experimentalOdom();
-      odom_publisher_->publish(newOdom);
-      updateOdomPath(odomPathExperimental);
-      odom_path_publisher_->publish(odomPathExperimental);
-      break;
-    case odomTypeList::debug:
-      estimateVelocityUsingTicks();
-      classicEulerOdom();
-      classicEuler_odom_publisher_->publish(newOdom);
-      updateOdomPath(odomPathClassicEuler);
-      classicEuler_odom_path_publisher_->publish(odomPathClassicEuler);
-
-      classicTrapezoidalOdom();
-      classicTrapezoidal_odom_publisher_->publish(newOdom);
-      updateOdomPath(odomPathClassicTrapezoidal);
-      classicTrapezoidal_odom_path_publisher_->publish(odomPathClassicTrapezoidal);
-
-      classicExactOdom();
-      classicExact_odom_publisher_->publish(newOdom);
-      updateOdomPath(odomPathClassicExact);
-      classicExact_odom_path_publisher_->publish(odomPathClassicExact);
-
-      experimentalOdom();
-      experimental_odom_publisher_->publish(newOdom);
-      updateOdomPath(odomPathExperimental);
-      experimental_odom_path_publisher_->publish(odomPathExperimental);
-      break;
-    default:
-      RCLCPP_ERROR(this->get_logger(), "Could not interpret odom type. Assuming classic trapezoidal.");
-      ODOM_TYPE=odomTypeList::classicTrapezoidal;
-      estimateVelocityUsingTicks();
-      classicTrapezoidalOdom();
-      odom_publisher_->publish(newOdom);
-      updateOdomPath(odomPathClassicTrapezoidal);
-      odom_path_publisher_->publish(odomPathClassicTrapezoidal);
-      break;
-    }
-
+  void runAlgorithm(){
+    odomAlgorithm();
+    odom_publisher_->publish(newOdom);
+    updateOdomPath();
+    odom_path_publisher_->publish(odomPath);
   };
 
   double reframeAngle(double angle){
@@ -345,18 +226,13 @@ private:
 
   };
 
- bool checkErroneousCycle(double previous_x, double previous_y, double yaw){
+ bool checkErroneousCycle(double newYaw){
 
     //prevent lockup from a single erroneous cycle
-    if(isnan(newOdom.pose.pose.position.x) || isnan(newOdom.pose.pose.position.y) || isnan(yaw) )
-    {
-        newOdom.pose.pose.position.x = previous_x;
-        newOdom.pose.pose.position.y = previous_y;
+    if(isnan(newOdom.pose.pose.position.x) || isnan(newOdom.pose.pose.position.y) || isnan(newYaw) ){
         return true;
-    }else{
-
-        return false;
     }
+    return false;
 
  }
 
@@ -373,140 +249,65 @@ private:
 
   };
 
-  void classicEulerOdom(){
+  void odomAlgorithm(){ 
+    
+    calculatingOdom=true;
 
-    double deltaT=(newTime - oldTime).nanoseconds()*1e-9;
+    double deltaS_R = (2*PI*WHEEL_RADIUS/(static_cast<float>(TICKSPERWHEELREV))) * (E_D*static_cast<float>(deltaRightTicks)/ALPHA_R);
+    double deltaS_L = (2*PI*WHEEL_RADIUS/(static_cast<float>(TICKSPERWHEELREV))) * (static_cast<float>(deltaLeftTicks)/ALPHA_L);
 
-    double newYaw= newOdom.twist.twist.angular.z*deltaT + oldYawClassicEuler;
+    //local displacement in this time step
+    double deltaS = (deltaS_R+deltaS_L)/2;
 
-    //keep theta in range proper range
-    newYaw=reframeAngle(newYaw);
+    //local displacement in this time step (it should be asin of this, but assuming small angular displacement)
+    double deltaTheta = (deltaS_R-deltaS_L)/(E_B * WHEEL_BASE);
 
-    newOdom.pose.pose.position.x=cos(newYaw)*newOdom.twist.twist.linear.x*deltaT+oldXClassicEuler;
-    newOdom.pose.pose.position.y=sin(newYaw)*newOdom.twist.twist.linear.x*deltaT+oldYClassicEuler;
+    double tempAngle = oldYawEuler + deltaTheta/2;
 
-    //prevent lockup from a single erroneous cycle
-    if(!checkErroneousCycle(oldXClassicEuler,oldYClassicEuler, newYaw)){
-      tf2::Quaternion q;
-      q.setRPY(0, 0, newYaw);
-
-      newOdom.pose.pose.orientation.x = q.x();
-      newOdom.pose.pose.orientation.y = q.y();
-      newOdom.pose.pose.orientation.z = q.z();
-      newOdom.pose.pose.orientation.w = q.w();
-      oldYawClassicEuler=newYaw;
-      oldXClassicEuler=newOdom.pose.pose.position.x;
-      oldYClassicEuler=newOdom.pose.pose.position.y;
-    }
-  };
-
-  void classicTrapezoidalOdom(){
-
-
-    double deltaT=(newTime - oldTime).nanoseconds()*1e-9;
-
-    double newYaw= newOdom.twist.twist.angular.z*deltaT + oldYawClassicTrapezoidal;
-
-    //keep theta in range proper range
-    newYaw=reframeAngle(newYaw);
-    double trapezoidalYaw= newOdom.twist.twist.angular.z*deltaT/2 + oldYawClassicTrapezoidal;
-
-    newOdom.pose.pose.position.x=cos(trapezoidalYaw)*newOdom.twist.twist.linear.x*deltaT+oldXClassicTrapezoidal;
-    newOdom.pose.pose.position.y=sin(trapezoidalYaw)*newOdom.twist.twist.linear.x*deltaT+oldYClassicTrapezoidal;
-
-    //prevent lockup from a single erroneous cycle
-    if(!checkErroneousCycle(oldXClassicTrapezoidal,oldYClassicTrapezoidal, newYaw)){
-      tf2::Quaternion q;
-      q.setRPY(0, 0, newYaw);
-
-      newOdom.pose.pose.orientation.x = q.x();
-      newOdom.pose.pose.orientation.y = q.y();
-      newOdom.pose.pose.orientation.z = q.z();
-      newOdom.pose.pose.orientation.w = q.w();
-      oldYawClassicTrapezoidal=newYaw;
-      oldXClassicTrapezoidal=newOdom.pose.pose.position.x;
-      oldYClassicTrapezoidal=newOdom.pose.pose.position.y;
-    }
-  };
-
-  void classicExactOdom(){
-
-    double deltaT=(newTime - oldTime).nanoseconds()*1e-9;
-    double newYaw= newOdom.twist.twist.angular.z*deltaT + oldYawClassicExact;
-    //keep theta in range proper range
-    newYaw=reframeAngle(newYaw);
-
-    if (abs(newOdom.twist.twist.angular.z)>0.01){
-      double ratio=newOdom.twist.twist.linear.x/newOdom.twist.twist.angular.z;
-      newOdom.pose.pose.position.x= oldXClassicExact + ratio*(sin(newYaw)-sin(oldYawClassicExact));
-      newOdom.pose.pose.position.y= oldYClassicExact - ratio*(cos(newYaw)-cos(oldYawClassicExact));
-    }else{
-      newOdom.pose.pose.position.x=cos(newYaw)*newOdom.twist.twist.linear.x*deltaT+oldXClassicExact;
-      newOdom.pose.pose.position.y=sin(newYaw)*newOdom.twist.twist.linear.x*deltaT+oldYClassicExact;
-    }
-
-    //prevent lockup from a single erroneous cycle
-    if(!checkErroneousCycle(oldXClassicExact,oldYClassicExact, newYaw)){
-      tf2::Quaternion q;
-      q.setRPY(0, 0, newYaw);
-
-      newOdom.pose.pose.orientation.x = q.x();
-      newOdom.pose.pose.orientation.y = q.y();
-      newOdom.pose.pose.orientation.z = q.z();
-      newOdom.pose.pose.orientation.w = q.w();
-      oldYawClassicExact=newYaw;
-      oldXClassicExact=newOdom.pose.pose.position.x;
-      oldYClassicExact=newOdom.pose.pose.position.y;
-    }
-  };
-
-  void experimentalOdom(){   
-
-    double leftDistance = static_cast<float>(deltaLeftTicks)/TICKSPERMETER;
-    double rightDistance = static_cast<float>(deltaRightTicks)/TICKSPERMETER;
-
-    //average distance
-    double cycleDistance = (rightDistance+leftDistance)/2;
-
-    //how many radians robot has turned since last cycle
-    double cycleAngle = asin ((rightDistance-leftDistance)/WHEEL_BASE);
-
-    //average angle during last cycle (for trapezoidal numerical integration)
-    double avgAngle = cycleAngle/2 + oldYawExperimental;
-
-    avgAngle=reframeAngle(avgAngle);
 
     //calculate new x, y, and theta
-    newOdom.pose.pose.position.x = oldXExperimental + cos(avgAngle)*cycleDistance;
-    newOdom.pose.pose.position.y = oldYExperimental + sin(avgAngle)*cycleDistance;
-    double newYaw = cycleAngle + oldYawExperimental;
-
-    //calculate velocity
-    double deltaT=(newTime - oldTime).nanoseconds()*1e-9;
-    newOdom.twist.twist.linear.x = cycleDistance/deltaT;
-    newOdom.twist.twist.angular.z = cycleAngle/deltaT;
-    newYaw=reframeAngle(newYaw);    
+    newOdom.pose.pose.position.x = oldOdom.pose.pose.position.x + cos(tempAngle)*deltaS;
+    newOdom.pose.pose.position.y = oldOdom.pose.pose.position.y + sin(tempAngle)*deltaS;
+    double newYawEuler = deltaTheta + oldYawEuler;  
 
     //prevent lockup from a single erroneous cycle
-    if(!checkErroneousCycle(oldXExperimental,oldYExperimental, newYaw)){
-      tf2::Quaternion q;
-      q.setRPY(0, 0, newYaw);
+    if(!checkErroneousCycle(newYawEuler)){
 
+      tf2::Quaternion q;
+      q.setRPY(0, 0, newYawEuler);
+      q.normalize();
       newOdom.pose.pose.orientation.x = q.x();
       newOdom.pose.pose.orientation.y = q.y();
       newOdom.pose.pose.orientation.z = q.z();
       newOdom.pose.pose.orientation.w = q.w();
-      oldYawExperimental=newYaw;
-      oldXExperimental=newOdom.pose.pose.position.x;
-      oldYExperimental=newOdom.pose.pose.position.y;
-      return;
+      updateOdomPoseCovariance(deltaS_R, deltaS_L, deltaS, tempAngle);
+
+      //estimate velocity
+      double deltaT=(newTime.nanoseconds() - oldTime.nanoseconds())*1e-9;
+      if(deltaT>0.001){//avoid weird time behaviour in simulation
+        newOdom.twist.twist.linear.x = deltaS/deltaT;
+        newOdom.twist.twist.angular.z = deltaTheta/deltaT; 
+        updateOdomTwistCovariance(deltaT);
+      }
+      //new becomes old
+      oldYawEuler=newYawEuler;
+      oldOdom.pose.pose.position.x = newOdom.pose.pose.position.x;
+      oldOdom.pose.pose.position.y = newOdom.pose.pose.position.y;
+      oldOdom.pose.covariance = newOdom.pose.covariance;
+      oldTime = newTime;
+      oldOdom.header.stamp = newOdom.header.stamp;
+    }else{
+      //ignore this iteration
+      newOdom.pose.pose.position.x = oldOdom.pose.pose.position.x;
+      newOdom.pose.pose.position.y = oldOdom.pose.pose.position.y;
     }
+    calculatingOdom=false;
   };
 
 
   void publishJointState(){
-    double left_side_position=newLticks/360*PI/180;
-    double right_side_position=newRticks/360*PI/180;
+    double left_side_position= static_cast<float>(newLticks/TICKSPERWHEELREV*PI/180);
+    double right_side_position=static_cast<float>(newRticks/TICKSPERWHEELREV*PI/180);
 
     traxter_joints.position.clear();
     traxter_joints.position={left_side_position,right_side_position,left_side_position,right_side_position};
@@ -515,14 +316,87 @@ private:
 
   };
 
- void updateOdomPath(nav_msgs::msg::Path& pathToUpdate){
-
+ void updateOdomPath(){
     geometry_msgs::msg::PoseStamped tempPose;
     tempPose.header=newOdom.header;
     tempPose.pose.position.x = newOdom.pose.pose.position.x;
     tempPose.pose.position.y = newOdom.pose.pose.position.y;
-    pathToUpdate.header=newOdom.header;
-    pathToUpdate.poses.push_back(tempPose);
+    odomPath.header=newOdom.header;
+    odomPath.poses.push_back(tempPose);
+  };
+
+  void updateOdomPoseCovariance(double delta_right, double delta_left, double deltaS, double updateAngle){
+
+    motion_increment_covar[0][0] = K_R*abs(delta_right);
+    motion_increment_covar[1][1] = K_L*abs(delta_left);
+    pose_jacobian[0][2] = -deltaS*sin(updateAngle);
+    pose_jacobian[1][2] = deltaS*cos(updateAngle);
+    motion_increment_jacobian[0][0] = 0.5*cos(updateAngle) - deltaS/(2*effectiveWheelBase)*sin(updateAngle);
+    motion_increment_jacobian[0][1] = 0.5*cos(updateAngle) + deltaS/(2*effectiveWheelBase)*sin(updateAngle);
+    motion_increment_jacobian[1][0] = 0.5*sin(updateAngle) + deltaS/(2*effectiveWheelBase)*cos(updateAngle);
+    motion_increment_jacobian[1][1] = 0.5*sin(updateAngle) - deltaS/(2*effectiveWheelBase)*cos(updateAngle);
+
+    for (size_t k = 0; k < 3; k++){
+      for (size_t i = 0; i <= k; i++){ //covariance matrix is symetric
+        
+        double tempA=0;
+        double tempB=0;
+        
+        for (size_t j = 0; j < 3; j++){
+
+          tempA += (pose_jacobian[i][0]*oldOdom.pose.covariance[mapCov[0][j]] +
+                      pose_jacobian[i][1]*oldOdom.pose.covariance[mapCov[1][j]] +
+                      pose_jacobian[i][2]*oldOdom.pose.covariance[mapCov[2][j]]) *
+                      pose_jacobian[k][j];
+          
+          if (j<2){
+            tempB += (motion_increment_jacobian[i][0]*motion_increment_covar[0][j] +
+                        motion_increment_jacobian[i][1]*motion_increment_covar[1][j]) *
+                        motion_increment_jacobian[k][j];
+          }
+        }
+        newOdom.pose.covariance[mapCov[i][k]]=tempA+tempB ;
+        if (i!=k){
+          newOdom.pose.covariance[mapCov[k][i]]=newOdom.pose.covariance[mapCov[i][k]];
+        }
+      }
+    }
+  };
+
+  void updateOdomTwistCovariance(double deltaT){
+
+    for (size_t k = 0; k < 3; k++){
+      for (size_t i = 0; i <= k; i++){ //covariance matrix is symetric
+        newOdom.twist.covariance[mapCov[i][k]] = (newOdom.pose.covariance[mapCov[i][k]]-oldOdom.pose.covariance[mapCov[i][k]])/deltaT;
+
+        if (i!=k){
+          newOdom.twist.covariance[mapCov[k][i]]=newOdom.twist.covariance[mapCov[i][k]];
+        }
+      }
+    }    
+  };
+
+  void update_timer_callback(){
+    timeToUpdate=true;
+  };
+
+  void update_odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg){
+
+    if (timeToUpdate && !calculatingOdom){
+      oldOdom.header.stamp = msg->header.stamp;
+      oldTime = rclcpp::Time( msg->header.stamp.sec, msg->header.stamp.nanosec);
+      oldOdom.pose.pose.position.x=msg->pose.pose.position.x;
+      oldOdom.pose.pose.position.y=msg->pose.pose.position.y;
+      oldOdom.pose.covariance=msg->pose.covariance;
+
+      double siny_cosp = 2 * (msg->pose.pose.orientation.w * msg->pose.pose.orientation.z + 
+                          msg->pose.pose.orientation.x * msg->pose.pose.orientation.y);
+      double cosy_cosp = 1 - 2 * (msg->pose.pose.orientation.y * msg->pose.pose.orientation.y +
+                          msg->pose.pose.orientation.z * msg->pose.pose.orientation.z);
+      oldYawEuler = atan2(siny_cosp, cosy_cosp);
+      timeToUpdate=false;
+    }
+    
   };
 
 
@@ -532,40 +406,20 @@ private:
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr odom_path_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_publisher_;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr simul_subscription_;
+  rclcpp::TimerBase::SharedPtr update_timer_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr filter_subscription_;
 
-  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr classicEuler_odom_publisher_;
-  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr classicEuler_odom_path_publisher_;
-  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr classicTrapezoidal_odom_publisher_;
-  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr classicTrapezoidal_odom_path_publisher_;
-  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr classicExact_odom_publisher_;
-  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr classicExact_odom_path_publisher_;
-  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr experimental_odom_publisher_;
-  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr experimental_odom_path_publisher_;
+
 
   nav_msgs::msg::Odometry newOdom;
+  nav_msgs::msg::Odometry oldOdom;
   sensor_msgs::msg::JointState traxter_joints;
-  const double PI = 3.141592;
+  nav_msgs::msg::Path odomPath;
+  const double PI = 3.1415926535;
 
   enum runTypeList {fullSimul,inLoop,realHard};
-  enum odomTypeList {classicEuler,classicTrapezoidal, classicExact, experimental, debug};
 
-  nav_msgs::msg::Path odomPathClassicEuler;
-  nav_msgs::msg::Path odomPathClassicTrapezoidal;
-  nav_msgs::msg::Path odomPathClassicExact;
-  nav_msgs::msg::Path odomPathExperimental;
-
-  double oldXClassicEuler;
-  double oldXClassicTrapezoidal;
-  double oldXClassicExact;
-  double oldXExperimental;
-  double oldYClassicEuler;
-  double oldYClassicTrapezoidal;
-  double oldYClassicExact;
-  double oldYExperimental;
-  double oldYawClassicEuler;
-  double oldYawClassicTrapezoidal;
-  double oldYawClassicExact;
-  double oldYawExperimental;
+  double oldYawEuler;
 
   int newLticks=0;
   int newRticks=0;
@@ -574,26 +428,40 @@ private:
   int deltaLeftTicks=0;
   int deltaRightTicks=0;
 
+  double effectiveWheelBase;
+
+  double motion_increment_covar[2][2] = { {0.0, 0.0}, {0.0, 0.0}};
+  double pose_jacobian[3][3] = { {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+  int mapCov[3][3] = { {0, 1, 5}, {6, 7, 11}, {30, 31, 35}};
+  double motion_increment_jacobian[3][2];
+
 
   u_int8_t status;
   const int imin = std::numeric_limits<int>::min(); // minimum value (-2147483647)
   const int imax = std::numeric_limits<int>::max(); // maximum value (2147483647)
 
+  bool calculatingOdom=false;
+  bool timeToUpdate=false;
+
 //parameter holders
-  int TICKSPERWHEELREV; //not in use. just a reference for now
-  int TICKSPERMETER;
+  int TICKSPERWHEELREV;
   double WHEEL_RADIUS;
   double WHEEL_BASE;
   int RUN_TYPE;
-  int ODOM_TYPE;
   double INITIAL_X;
   double INITIAL_Y;
   double INITIAL_THETA;
-  std::vector<double> ODOMETRY_COVARIANCE;
+  double K_R;
+  double K_L;
+  double E_D;
+  double E_B;
+  double ALPHA_R;
+  double ALPHA_L;
+  bool UPDATE_ODOM;
 
-//time instances because rclcpp is a mess with time
-rclcpp::Time oldTime;
-rclcpp::Time newTime;
+  //time instances because rclcpp is a mess with time and header stamps
+  rclcpp::Time oldTime;
+  rclcpp::Time newTime;
 
 };
 

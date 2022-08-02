@@ -28,24 +28,11 @@
     </include> 
     <include file="$(find-pkg-share traxter_ign_gazebo)/launch/inLoop_bridge.launch.py">
     </include>
-    <node pkg="traxter_imu_interpreter" exec="imu_interpreter_node" name="imu_interpreter">
-      <param name="use_sim_time" value='true' />
-    </node>
   </group>
 
   <group if="$(eval '\'$(var runType)\' == \'realHard\'')">  
     <include file="$(find-pkg-share traxter_description)/launch/traxter_description.launch.py">
       <arg name="simTime" value= 'False'/>
-    </include>
-    <node pkg="traxter_imu_interpreter" exec="imu_interpreter_node" name="imu_interpreter">
-      <param name="use_sim_time" value='false' />
-    </node>
-  </group>
-
-  <group>
-    <include file="$(find-pkg-share traxter_kinematics)/launch/traxter_kinematics.launch.xml">
-      <arg name="runType" value= "$(var runType)"/>
-      <arg name="configFile" value= "$(var configFile)"/>
     </include>
   </group>
 

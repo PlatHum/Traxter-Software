@@ -1,0 +1,57 @@
+  <launch>
+  <arg name="configFile" default="default" />
+  <arg name="runType" default="realHard" />
+
+  <group if="$(eval '\'$(var configFile)\' == \'default\'')">
+    <group if="$(eval '\'$(var runType)\' == \'fullSimul\'')">
+        <node pkg="traxter_imu_interpreter" exec="imu_interpreter_node" name="imu_interpreter">
+          <param name="_run_type" type="int" value="0" />
+          <param name="use_sim_time" value='true' />
+          <param from="$(find-pkg-share traxter_bringup)/config/defaultSimulation.yaml" />
+        </node>
+    </group>
+
+    <group if="$(eval '\'$(var runType)\' == \'inLoop\'')">
+        <node pkg="traxter_imu_interpreter" exec="imu_interpreter_node" name="imu_interpreter">
+          <param name="_run_type" type="int" value="1" />
+          <param name="use_sim_time" value="true" />
+          <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
+        </node>
+    </group>
+
+    <group if="$(eval '\'$(var runType)\' == \'realHard\'')">
+        <node pkg="traxter_imu_interpreter" exec="imu_interpreter_node" name="imu_interpreter">
+          <param name="_run_type" type="int" value="2" />
+          <param name="use_sim_time" value="false" />
+          <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
+        </node>
+    </group>
+  </group>
+
+  <group if="$(eval '\'$(var configFile)\' != \'default\'')">
+    <group if="$(eval '\'$(var runType)\' == \'fullSimul\'')">
+        <node pkg="traxter_imu_interpreter" exec="imu_interpreter_node" name="imu_interpreter">
+          <param name="_run_type" type="int" value="0" />
+          <param name="use_sim_time" value="true" />
+          <param from="$(find-pkg-share traxter_bringup)/config/$(var configFile)" />
+        </node>
+    </group>
+
+    <group if="$(eval '\'$(var runType)\' == \'inLoop\'')">
+        <node pkg="traxter_imu_interpreter" exec="imu_interpreter_node" name="imu_interpreter">
+          <param name="_run_type" type="int" value="1" />
+          <param name="use_sim_time" value="true" />
+          <param from="$(find-pkg-share traxter_bringup)/config/$(var configFile)" />
+        </node>
+    </group>
+
+    <group if="$(eval '\'$(var runType)\' == \'realHard\'')">
+        <node pkg="traxter_imu_interpreter" exec="imu_interpreter_node" name="imu_interpreter">
+          <param name="_run_type" type="int" value="2" />
+          <param name="use_sim_time" value="false" />
+          <param from="$(find-pkg-share traxter_bringup)/config/$(var configFile)" />
+        </node>
+    </group>
+  </group>
+
+</launch>
