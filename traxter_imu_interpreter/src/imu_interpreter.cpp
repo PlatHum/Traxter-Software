@@ -4,6 +4,13 @@
 #include <rclcpp/qos.hpp>
 #include <traxter_msgs/msg/light_imu.hpp>
 #include "sensor_msgs/msg/imu.hpp"
+#include <iterator>
+#include <random>
+#include <cstdio>  // for EOF
+#include <string>
+#include <sstream>
+#include <vector>
+#include <math.h>
 using std::placeholders::_1;
 
 class imuInterpreter : public rclcpp::Node
@@ -14,25 +21,73 @@ public:
   : Node("imu_interpreter")
   {
 
+    this->declare_parameter("_run_type", 2);//0 full simulation, 1 hardware in the loop, 2 real hardware
+    this->declare_parameter("_orientation_covariance", "[[1.704e-05, 2.603e-07,  7.682e-07], [2.603e-07, 1.663e-05,  -6.332e-07], [7.682e-07, -6.332e-07,  1.521e-05]]");
+    this->declare_parameter("_angular_velocity_covariance", "[[4.265e-06, 6.012e-08,  1.107e-08], [6.012e-08, 8.837e-06,  5.647e-08], [1.107e-08, 5.647e-08,  4.042e-06]]");
+    this->declare_parameter("_linear_acceleration_covariance", "[[0.0002836, 4.167e-06,  -4.942e-08], [4.167e-06, 0.0002861,  9.564e-06], [-4.942e-08, 9.564e-06,  0.0002688]]");
+
+
     rclcpp::QoS qos(3);
     qos.keep_last(3);
     qos.best_effort();
     qos.durability_volatile();
-    // Create a Subscriber object that will listen to the /counter topic and will call the 'topic_callback' function       // each time it reads something from the topic
-    subscription_ = this->create_subscription<traxter_msgs::msg::LightImu>(
-      "traxter/imu/data/unprocessed", qos, std::bind(&imuInterpreter::topic_callback, this, _1));
 
-    publisher_ = this->create_publisher<sensor_msgs::msg::Imu>("traxter/imu/data/processed",1);
 
-/*     standard_imu_message.header.frame_id.data = (char *)"imu_link";
-    standard_imu_message.header.frame_id.size = sizeof("imu_link");
-    standard_imu_message.header.frame_id.capacity = sizeof("imu_link"); */
+    this->get_parameter("_run_type", RUN_TYPE);
+    this->get_parameter("_orientation_covariance", ORIENTATION_COVARIANCE);
+    this->get_parameter("_angular_velocity_covariance", ANGULAR_VELOCITY_COVARIANCE);
+    this->get_parameter("_linear_acceleration_covariance", LINEAR_ACCELERATION_COVARIANCE);
+
+    switch (RUN_TYPE)
+    {
+    case runTypeList::fullSimul:
+        RCLCPP_INFO(this->get_logger(), "IMU interpretation running in full Simulation mode.");
+        simul_subscription_ = this->create_subscription<sensor_msgs::msg::Imu>(
+          "traxter/simulation/imu", 2, std::bind(&imuInterpreter::simulation_topic_callback, this, _1));
+      break;
+    case runTypeList::inLoop: //hardware in the loop
+        RCLCPP_INFO(this->get_logger(), "IMU interpretation running in Hardware in the Loop mode.");
+      hardware_subscription_ = this->create_subscription<traxter_msgs::msg::LightImu>(
+        "traxter/imu/data/unprocessed", qos, std::bind(&imuInterpreter::hardware_topic_callback, this, _1));
+      break;
+    case runTypeList::realHard: //hardware
+        RCLCPP_INFO(this->get_logger(), "IMU interpretation running in Hardware mode.");
+
+      hardware_subscription_ = this->create_subscription<traxter_msgs::msg::LightImu>(
+        "traxter/imu/data/unprocessed", qos, std::bind(&imuInterpreter::hardware_topic_callback, this, _1));
+      break;
+    default:
+        RCLCPP_FATAL(this->get_logger(), "Could not interpret run type. Could not construct IMU interpreter node.");
+      break;
+    }
+
+    publisher_ = this->create_publisher<sensor_msgs::msg::Imu>("imu",1);
     standard_imu_message.header.frame_id="imu_link";
+    std::string ERROR;
+    orientation_covariance = parseVVF(ORIENTATION_COVARIANCE, ERROR);
+    angular_velocity_covariance = parseVVF(ANGULAR_VELOCITY_COVARIANCE, ERROR);
+    linear_acceleration_covariance = parseVVF(LINEAR_ACCELERATION_COVARIANCE, ERROR);
+
+      for (size_t i = 0; i < 3; i++){
+        for (size_t j = 0; j <= i; j++){
+          standard_imu_message.orientation_covariance[mapCov[i][j]]=orientation_covariance[i][j];
+          standard_imu_message.angular_velocity_covariance[mapCov[i][j]]=angular_velocity_covariance[i][j];
+          standard_imu_message.linear_acceleration_covariance[mapCov[i][j]]=linear_acceleration_covariance[i][j];
+          if (i!=j){
+            standard_imu_message.orientation_covariance[mapCov[j][i]]=standard_imu_message.orientation_covariance[mapCov[i][j]];
+            standard_imu_message.angular_velocity_covariance[mapCov[j][i]]=standard_imu_message.angular_velocity_covariance[mapCov[i][j]];
+            standard_imu_message.linear_acceleration_covariance[mapCov[j][i]]=standard_imu_message.linear_acceleration_covariance[mapCov[i][j]];
+          }
+        }
+      }
+
+  generator.seed(42);
+  dist.param(std::normal_distribution<double>(0.012, 0.003).param());
   }
 
 private:
   // Define a function called 'topic_callback' that receives a parameter named 'msg' 
-  void topic_callback(const traxter_msgs::msg::LightImu::SharedPtr msg)
+  void hardware_topic_callback(const traxter_msgs::msg::LightImu::SharedPtr msg)
   {
     if(isFirst){
       biasQuat[0]=msg->q0 - 100;
@@ -40,27 +95,147 @@ private:
       biasQuat[2]=msg->q2;
       biasQuat[3]=msg->q3;
       isFirst=false;
-    }else{
-      standard_imu_message.orientation.x=(-msg->q1 + biasQuat[1])/100.0;
-      standard_imu_message.orientation.y=(-msg->q2 + biasQuat[2])/100.0;
-      standard_imu_message.orientation.z=(msg->q3 - biasQuat[3])/100.0;
-      standard_imu_message.orientation.w=(msg->q0 - biasQuat[0])/100.0;
     }
+    standard_imu_message.orientation.x=(-msg->q1 + biasQuat[1])/100.0;
+    standard_imu_message.orientation.y=(-msg->q2 + biasQuat[2])/100.0;
+    standard_imu_message.orientation.z=(msg->q3 - biasQuat[3])/100.0;
+    standard_imu_message.orientation.w=(msg->q0 - biasQuat[0])/100.0;
+
     standard_imu_message.angular_velocity.x=msg->gyrox/100.0;
     standard_imu_message.angular_velocity.y=msg->gyroy/100.0;
     standard_imu_message.angular_velocity.z=msg->gyroz/100.0;
     standard_imu_message.linear_acceleration.x=msg->accx/100.0;
     standard_imu_message.linear_acceleration.y=msg->accy/100.0;
     standard_imu_message.linear_acceleration.z=msg->accz/100.0;
-    standard_imu_message.header.stamp=rclcpp::Clock().now();
+    standard_imu_message.header.stamp=this->now();
 
     publisher_->publish(standard_imu_message);
   }
-  rclcpp::Subscription<traxter_msgs::msg::LightImu>::SharedPtr subscription_;
+
+void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
+
+      msg->orientation.x=0.65*(msg->orientation.x) +0.35*standard_imu_message.orientation.x  + dist(generator) ;
+      msg->orientation.y=0.65*(msg->orientation.y) +0.35*standard_imu_message.orientation.y + dist(generator);
+      msg->orientation.z=0.65*(msg->orientation.z) +0.35*standard_imu_message.orientation.z + dist(generator);
+      msg->orientation.w=0.65*(msg->orientation.w) +0.35*standard_imu_message.orientation.w + dist(generator);
+      double modQ=sqrt(pow(msg->orientation.x, 2 ) + pow(msg->orientation.y, 2 ) + pow(msg->orientation.z, 2 ) + pow(msg->orientation.w, 2 ));
+      msg->orientation.x/=modQ;
+      msg->orientation.y/=modQ;
+      msg->orientation.z/=modQ;
+      msg->orientation.w/=modQ;
+
+      if(isFirst){
+      biasQuat[0]=msg->orientation.w - 1;
+      biasQuat[1]=msg->orientation.x;
+      biasQuat[2]=msg->orientation.y;
+      biasQuat[3]=msg->orientation.z;
+      isFirst=false;
+    }
+      msg->orientation.x-=biasQuat[1];
+      msg->orientation.y-=biasQuat[2];
+      msg->orientation.z-=biasQuat[3];
+      msg->orientation.w-=biasQuat[0];
+
+      for (size_t i = 0; i < 3; i++){
+        for (size_t j = 0; j <= i; j++){
+          msg->orientation_covariance[mapCov[i][j]]=1.1*orientation_covariance[i][j];
+          msg->angular_velocity_covariance[mapCov[i][j]]=angular_velocity_covariance[i][j];
+          msg->linear_acceleration_covariance[mapCov[i][j]]=linear_acceleration_covariance[i][j];
+          if (i!=j){
+            msg->orientation_covariance[mapCov[j][i]]=msg->orientation_covariance[mapCov[i][j]];
+            msg->angular_velocity_covariance[mapCov[j][i]]=msg->angular_velocity_covariance[mapCov[i][j]];
+            msg->linear_acceleration_covariance[mapCov[j][i]]=msg->linear_acceleration_covariance[mapCov[i][j]];
+          }
+        }
+      }
+
+  msg->header.frame_id="imu_link";
+  publisher_->publish(*msg);
+
+  standard_imu_message.orientation.x=msg->orientation.x;
+  standard_imu_message.orientation.y=msg->orientation.y;
+  standard_imu_message.orientation.z=msg->orientation.z;
+  standard_imu_message.orientation.w=msg->orientation.w;
+
+};
+
+
+  std::vector<std::vector<double>> parseVVF(const std::string & input, std::string & error_return)
+  {
+    std::vector<std::vector<double>> result;
+
+    std::stringstream input_ss(input);
+    int depth = 0;
+    std::vector<double> current_vector;
+    while (!!input_ss && !input_ss.eof()) {
+      switch (input_ss.peek()) {
+      case EOF:
+        break;
+      case '[':
+        depth++;
+        if (depth > 2) {
+          error_return = "Array depth greater than 2";
+          return result;
+        }
+        input_ss.get();
+        current_vector.clear();
+        break;
+      case ']':
+        depth--;
+        if (depth < 0) {
+          error_return = "More close ] than open [";
+          return result;
+        }
+        input_ss.get();
+        if (depth == 1) {
+          result.push_back(current_vector);
+        }
+        break;
+      case ',':
+      case ' ':
+      case '\t':
+        input_ss.get();
+        break;
+      default:  // All other characters should be part of the numbers.
+        if (depth != 2) {
+          std::stringstream err_ss;
+          err_ss << "Numbers at depth other than 2. Char was '" << char(input_ss.peek()) << "'.";
+          error_return = err_ss.str();
+          return result;
+        }
+        double value;
+        input_ss >> value;
+        if (!!input_ss) {
+          current_vector.push_back(value);
+        }
+        break;
+      }
+    }
+    if (depth != 0) {
+      error_return = "Unterminated vector string.";
+    } else {
+      error_return = "";
+    }
+    return result;
+  };
+
+  rclcpp::Subscription<traxter_msgs::msg::LightImu>::SharedPtr hardware_subscription_;
+  rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr simul_subscription_;
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr publisher_;
   sensor_msgs::msg::Imu standard_imu_message;
   bool isFirst=true;
   int biasQuat[4];
+  enum runTypeList {fullSimul,inLoop,realHard};
+  std::string ORIENTATION_COVARIANCE;
+  std::string ANGULAR_VELOCITY_COVARIANCE;
+  std::string LINEAR_ACCELERATION_COVARIANCE;
+  int RUN_TYPE;
+  std::default_random_engine generator;
+  std::normal_distribution<double> dist;
+  int mapCov[3][3] = {{0, 1, 2}, {3, 4, 5}, {6, 7, 8}}; 
+  std::vector<std::vector<double>> orientation_covariance;
+  std::vector<std::vector<double>> angular_velocity_covariance;
+  std::vector<std::vector<double>>linear_acceleration_covariance;
 };
 
 int main(int argc, char * argv[])

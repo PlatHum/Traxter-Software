@@ -1,25 +1,57 @@
 <launch>
-  <arg name="runType" default="fullSimul" />
+  <arg name="runType" default="realHard" />
+  <arg name="configFile" default="default" />
 
-  <group if="$(eval '\'$(var runType)\' == \'realHard\'')">
-    <node pkg="traxter_kinematics" exec="cmdVel_converter_node" name="cmdVel_converter">
-      <param name="_run_type" type="int" value="2" />
-      <param from="$(find-pkg-share traxter_kinematics)/config/kinematic_config.yaml" />
-    </node>
+  <group if="$(eval '\'$(var configFile)\' == \'default\'')">
+    <group if="$(eval '\'$(var runType)\' == \'realHard\'')">
+      <node pkg="traxter_kinematics" exec="cmdVel_converter_node" name="cmdVel_converter">
+        <param name="_run_type" type="int" value="2" />
+        <param name="use_sim_time" value="false" />
+        <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
+      </node>
+    </group>
+
+    <group if="$(eval '\'$(var runType)\' == \'inLoop\'')">
+      <node pkg="traxter_kinematics" exec="cmdVel_converter_node" name="cmdVel_converter">
+        <param name="_run_type" type="int" value="1" />
+        <param name="use_sim_time" value="true" />
+        <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
+      </node>
+    </group>  
+
+    <group if="$(eval '\'$(var runType)\' == \'fullSimul\'')">
+      <node pkg="traxter_kinematics" exec="cmdVel_converter_node" name="cmdVel_converter">
+        <param name="_run_type" type="int" value="0" />
+        <param name="use_sim_time" value="true" />
+        <param from="$(find-pkg-share traxter_bringup)/config/defaultSimulation.yaml" />
+      </node>
+    </group>
   </group>
 
-  <group if="$(eval '\'$(var runType)\' == \'inLoop\'')">
-    <node pkg="traxter_kinematics" exec="cmdVel_converter_node" name="cmdVel_converter">
-      <param name="_run_type" type="int" value="1" />
-      <param from="$(find-pkg-share traxter_kinematics)/config/kinematic_config.yaml" />
-    </node>
-  </group>  
+  <group if="$(eval '\'$(var configFile)\' != \'default\'')">
+    <group if="$(eval '\'$(var runType)\' == \'realHard\'')">
+      <node pkg="traxter_kinematics" exec="cmdVel_converter_node" name="cmdVel_converter">
+        <param name="_run_type" type="int" value="2" />
+        <param name="use_sim_time" value="false" />
+        <param from="$(find-pkg-share traxter_bringup)/config/$(var configFile)" />
+      </node>
+    </group>
 
-  <group if="$(eval '\'$(var runType)\' == \'fullSimul\'')">
-    <node pkg="traxter_kinematics" exec="cmdVel_converter_node" name="cmdVel_converter">
-      <param name="_run_type" type="int" value="0" />
-      <param from="$(find-pkg-share traxter_kinematics)/config/kinematic_config.yaml" />
-    </node>
+    <group if="$(eval '\'$(var runType)\' == \'inLoop\'')">
+      <node pkg="traxter_kinematics" exec="cmdVel_converter_node" name="cmdVel_converter">
+        <param name="_run_type" type="int" value="1" />
+        <param name="use_sim_time" value="true" />
+        <param from="$(find-pkg-share traxter_bringup)/config/$(var configFile)" />
+      </node>
+    </group>  
+
+    <group if="$(eval '\'$(var runType)\' == \'fullSimul\'')">
+      <node pkg="traxter_kinematics" exec="cmdVel_converter_node" name="cmdVel_converter">
+        <param name="_run_type" type="int" value="0" />
+        <param name="use_sim_time" value="true" />
+        <param from="$(find-pkg-share traxter_bringup)/config/$(var configFile)" />
+      </node>
+    </group>
   </group>
 
 </launch>

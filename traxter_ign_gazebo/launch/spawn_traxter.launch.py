@@ -33,6 +33,7 @@ def generate_launch_description():
             '-Y', str(orientation[2])
             ]
     )
+    #print("Spawning Traxter in World.")
 
     
 

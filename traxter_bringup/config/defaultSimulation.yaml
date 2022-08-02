@@ -1,0 +1,22 @@
+/**:
+    ros__parameters:
+#General robot properties
+        _wheel_radius: 0.0355
+        _wheel_base: 0.225
+        _ticks_per_wheel_rev: 360
+
+#For odometry specifics ED1.45 and k's0.0009 best
+        _initial_x: 0.0
+        _initial_y: 0.0
+        _initial_theta: 0.0
+        _alpha_R: 1.0
+        _alpha_L: 1.0
+        _k_R: 0.0007
+        _k_L: 0.0007
+        _E_D: 1.0
+        _E_B: 1.4
+        _update_odometry: true
+#For IMU
+        _orientation_covariance: "[[4.207e-05, 6.086e-07,  5.695e-07], [6.086e-07, 4.091e-05,  -9.372e-07], [5.695e-07, -9.372e-07,  3.843e-05]]"
+        _angular_velocity_covariance: "[[4.121e-06, -2.005e-07,  1.098e-07], [-2.005e-07, 9.01e-06,  -1.473e-07], [1.098e-07, -1.473e-07,  3.892e-06]]"
+        _linear_acceleration_covariance: "[[0.0002876, -2.662e-06,  -1.286e-06], [-2.662e-06, 0.0002901,  6.739e-06], [-1.286e-06, 6.739e-06,  0.0002881]]"

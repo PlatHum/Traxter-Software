@@ -1,0 +1,28 @@
+<launch>
+  <arg name="runType" default="realHard" />
+
+    <group if="$(eval '\'$(var runType)\' == \'fullSimul\'')">
+      <node pkg="robot_localization" exec="ekf_node" name="ekf_filter_node">
+        <param name="use_sim_time" value='true' />
+        <param from="$(find-pkg-share traxter_robot_localization)/config/simulationEKF.yaml" />
+        <remap from="odometry/filtered" to="traxter/odometry/filtered"/>
+      </node>
+    </group>
+
+    <group if="$(eval '\'$(var runType)\' == \'inLoop\'')">
+      <node pkg="robot_localization" exec="ekf_node" name="ekf_filter_node">
+        <param name="use_sim_time" value="true" />
+        <param from="$(find-pkg-share traxter_robot_localization)/config/hardwareEKF.yaml" />
+        <remap from="odometry/filtered" to="traxter/odometry/filtered"/>
+      </node>
+    </group>
+
+    <group if="$(eval '\'$(var runType)\' == \'realHard\'')">
+      <node pkg="robot_localization" exec="ekf_node" name="ekf_filter_node">
+        <param name="use_sim_time" value="false" />
+        <param from="$(find-pkg-share traxter_robot_localization)/config/hardwareEKF.yaml" />
+        <remap from="odometry/filtered" to="traxter/odometry/filtered"/>
+      </node>
+    </group>
+
+</launch>
