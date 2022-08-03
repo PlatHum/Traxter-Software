@@ -59,6 +59,7 @@ public:
         RCLCPP_INFO(this->get_logger(), "Odometry running in full Simulation mode.");
         simul_subscription_ = this->create_subscription<sensor_msgs::msg::JointState>(
           "joint_states", 1, std::bind(&odometryPublisher::simulation_topic_callback, this, _1));
+        publish_timer_ = create_wall_timer( 34ms, std::bind(&odometryPublisher::publish_timer_callback, this));  
       break;
     case runTypeList::inLoop: //hardware in the loop
         RCLCPP_INFO(this->get_logger(), "Odometry running in Hardware in the Loop mode.");
@@ -103,6 +104,7 @@ private:
     oldOdom.pose.pose.position.y = INITIAL_Y;
     tf2::Quaternion q;
     q.setRPY(0, 0, INITIAL_THETA);
+    q.normalize();
 
     newOdom.pose.pose.orientation.x = q.x();
     newOdom.pose.pose.orientation.y = q.y();
@@ -154,27 +156,28 @@ private:
 
   void simulation_topic_callback(const sensor_msgs::msg::JointState::SharedPtr msg)
   {
-    int wanted_joint_counter=0;
-    for (size_t i = 0; i < msg->name.size(); i++){
-      
-      if (msg->name[i]=="front_left_wheel_joint"){
+      int wanted_joint_counter=0;
+      for (size_t i = 0; i < msg->name.size(); i++){
+        
+        if (msg->name[i]=="front_left_wheel_joint"){
 
-        newLticks=std::floor(((msg->position[i]/(2*PI))*static_cast<double>(TICKSPERWHEELREV)));
-        wanted_joint_counter++;
+          newLticks=std::floor(((msg->position[i]/(2*PI))*static_cast<double>(TICKSPERWHEELREV)));
+          wanted_joint_counter++;
 
-      }else if(msg->name[i]=="front_right_wheel_joint"){
+        }else if(msg->name[i]=="front_right_wheel_joint"){
 
-        newRticks=std::floor(((msg->position[i]/(2*PI))*static_cast<double>(TICKSPERWHEELREV)));
-        wanted_joint_counter++;
+          newRticks=std::floor(((msg->position[i]/(2*PI))*static_cast<double>(TICKSPERWHEELREV)));
+          wanted_joint_counter++;
+        }
+        if (wanted_joint_counter==2){
+          break;
+        }
       }
-      if (wanted_joint_counter==2){
-        break;
-      }
-    }
-    newOdom.header.stamp = msg->header.stamp;
-    newTime = rclcpp::Time(msg->header.stamp.sec , msg->header.stamp.nanosec);
-    deltaEncoderTicks();
-    runAlgorithm();
+    
+      newOdom.header.stamp = msg->header.stamp;
+      newTime = rclcpp::Time(msg->header.stamp.sec , msg->header.stamp.nanosec);
+      deltaEncoderTicks();
+      runAlgorithm();
   };
 
   void deltaEncoderTicks(){
@@ -206,9 +209,19 @@ private:
   };
 
   void runAlgorithm(){
+
     odomAlgorithm();
-    odom_publisher_->publish(newOdom);
+
+    if (timeToPublish){
+      odom_publisher_->publish(newOdom);
+    }
+
     updateOdomPath();
+
+    if (timeToPublish){
+      odom_path_publisher_->publish(odomPath);
+      if(RUN_TYPE==runTypeList::fullSimul) timeToPublish=false;
+    }
     odom_path_publisher_->publish(odomPath);
   };
 
@@ -380,6 +393,10 @@ private:
     timeToUpdate=true;
   };
 
+  void publish_timer_callback(){
+    timeToPublish=true;
+  };
+
   void update_odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg){
 
     if (timeToUpdate && !calculatingOdom){
@@ -407,6 +424,7 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_publisher_;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr simul_subscription_;
   rclcpp::TimerBase::SharedPtr update_timer_;
+  rclcpp::TimerBase::SharedPtr publish_timer_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr filter_subscription_;
 
 
@@ -442,6 +460,7 @@ private:
 
   bool calculatingOdom=false;
   bool timeToUpdate=false;
+  bool timeToPublish=true;
 
 //parameter holders
   int TICKSPERWHEELREV;

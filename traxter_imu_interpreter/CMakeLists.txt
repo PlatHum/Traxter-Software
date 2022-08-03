@@ -10,6 +10,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(traxter_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -25,7 +27,7 @@ endif()
 
 add_executable(imu_interpreter_node src/imu_interpreter.cpp)
 
-ament_target_dependencies(imu_interpreter_node rclcpp sensor_msgs traxter_msgs)
+ament_target_dependencies(imu_interpreter_node rclcpp sensor_msgs traxter_msgs tf2 tf2_ros)
 
 install(TARGETS
    imu_interpreter_node

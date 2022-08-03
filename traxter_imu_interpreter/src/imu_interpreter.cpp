@@ -4,6 +4,7 @@
 #include <rclcpp/qos.hpp>
 #include <traxter_msgs/msg/light_imu.hpp>
 #include "sensor_msgs/msg/imu.hpp"
+#include <tf2/LinearMath/Quaternion.h>
 #include <iterator>
 #include <random>
 #include <cstdio>  // for EOF
@@ -68,6 +69,7 @@ public:
     angular_velocity_covariance = parseVVF(ANGULAR_VELOCITY_COVARIANCE, ERROR);
     linear_acceleration_covariance = parseVVF(LINEAR_ACCELERATION_COVARIANCE, ERROR);
 
+    if(RUN_TYPE!=runTypeList::fullSimul){
       for (size_t i = 0; i < 3; i++){
         for (size_t j = 0; j <= i; j++){
           standard_imu_message.orientation_covariance[mapCov[i][j]]=orientation_covariance[i][j];
@@ -80,9 +82,7 @@ public:
           }
         }
       }
-
-  generator.seed(42);
-  dist.param(std::normal_distribution<double>(0.012, 0.003).param());
+    }
   }
 
 private:
@@ -114,31 +114,29 @@ private:
 
 void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
 
-      msg->orientation.x=0.65*(msg->orientation.x) +0.35*standard_imu_message.orientation.x  + dist(generator) ;
-      msg->orientation.y=0.65*(msg->orientation.y) +0.35*standard_imu_message.orientation.y + dist(generator);
-      msg->orientation.z=0.65*(msg->orientation.z) +0.35*standard_imu_message.orientation.z + dist(generator);
-      msg->orientation.w=0.65*(msg->orientation.w) +0.35*standard_imu_message.orientation.w + dist(generator);
-      double modQ=sqrt(pow(msg->orientation.x, 2 ) + pow(msg->orientation.y, 2 ) + pow(msg->orientation.z, 2 ) + pow(msg->orientation.w, 2 ));
-      msg->orientation.x/=modQ;
-      msg->orientation.y/=modQ;
-      msg->orientation.z/=modQ;
-      msg->orientation.w/=modQ;
-
-      if(isFirst){
-      biasQuat[0]=msg->orientation.w - 1;
-      biasQuat[1]=msg->orientation.x;
-      biasQuat[2]=msg->orientation.y;
-      biasQuat[3]=msg->orientation.z;
+    if(isFirst){
+      previousTime= rclcpp::Time(msg->header.stamp.sec , msg->header.stamp.nanosec);
+      currentTime= previousTime;
       isFirst=false;
+    }else{
+      currentTime = rclcpp::Time(msg->header.stamp.sec , msg->header.stamp.nanosec);
     }
-      msg->orientation.x-=biasQuat[1];
-      msg->orientation.y-=biasQuat[2];
-      msg->orientation.z-=biasQuat[3];
-      msg->orientation.w-=biasQuat[0];
+
+      double deltaT= (currentTime-previousTime).nanoseconds()*1e-9;
+      double pitch = prevPitch + deltaT * 0.5 * (msg->angular_velocity.y + standard_imu_message.angular_velocity.y);
+      double roll = prevRoll + deltaT * 0.5 * (msg->angular_velocity.x + standard_imu_message.angular_velocity.x);
+      double yaw = prevYaw + deltaT * 0.5 * (msg->angular_velocity.z + standard_imu_message.angular_velocity.z);
+      tf2::Quaternion q;
+      q.setRPY(roll, pitch, yaw);
+      q.normalize();
+      msg->orientation.x= q.x();
+      msg->orientation.y= q.y();
+      msg->orientation.z= q.z();
+      msg->orientation.w= q.w();
 
       for (size_t i = 0; i < 3; i++){
         for (size_t j = 0; j <= i; j++){
-          msg->orientation_covariance[mapCov[i][j]]=1.1*orientation_covariance[i][j];
+          msg->orientation_covariance[mapCov[i][j]]=orientation_covariance[i][j];
           msg->angular_velocity_covariance[mapCov[i][j]]=angular_velocity_covariance[i][j];
           msg->linear_acceleration_covariance[mapCov[i][j]]=linear_acceleration_covariance[i][j];
           if (i!=j){
@@ -148,14 +146,17 @@ void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
           }
         }
       }
+      previousTime = currentTime;
+      msg->header.frame_id="imu_link";
+      publisher_->publish(*msg);
 
-  msg->header.frame_id="imu_link";
-  publisher_->publish(*msg);
-
-  standard_imu_message.orientation.x=msg->orientation.x;
-  standard_imu_message.orientation.y=msg->orientation.y;
-  standard_imu_message.orientation.z=msg->orientation.z;
-  standard_imu_message.orientation.w=msg->orientation.w;
+  standard_imu_message.angular_velocity.x=msg->angular_velocity.x;
+  standard_imu_message.angular_velocity.y=msg->angular_velocity.y;
+  standard_imu_message.angular_velocity.z=msg->angular_velocity.z;
+  prevRoll = roll;
+  prevPitch = pitch;
+  prevYaw = yaw;
+  
 
 };
 
@@ -236,6 +237,11 @@ void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
   std::vector<std::vector<double>> orientation_covariance;
   std::vector<std::vector<double>> angular_velocity_covariance;
   std::vector<std::vector<double>>linear_acceleration_covariance;
+  rclcpp::Time currentTime;
+  rclcpp::Time previousTime;
+  double prevPitch = 0;
+  double prevRoll = 0;
+  double prevYaw = 0;
 };
 
 int main(int argc, char * argv[])

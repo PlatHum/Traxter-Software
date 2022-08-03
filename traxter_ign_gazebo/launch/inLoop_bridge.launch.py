@@ -57,6 +57,7 @@ def generate_launch_description():
         executable='parameter_bridge',
         name='bridge',
         arguments=args,
+        parameters=[{'use_sim_time': True}],
         remappings=remaps
     )
 
