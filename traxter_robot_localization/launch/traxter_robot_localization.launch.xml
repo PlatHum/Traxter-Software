@@ -5,7 +5,7 @@
       <node pkg="robot_localization" exec="ekf_node" name="ekf_filter_node">
         <param name="use_sim_time" value='true' />
         <param from="$(find-pkg-share traxter_robot_localization)/config/simulationEKF.yaml" />
-        <remap from="odometry/filtered" to="traxter/odometry/filtered"/>
+        <remap from="odometry/filtered" to="odom"/>
       </node>
     </group>
 
@@ -13,7 +13,7 @@
       <node pkg="robot_localization" exec="ekf_node" name="ekf_filter_node">
         <param name="use_sim_time" value="true" />
         <param from="$(find-pkg-share traxter_robot_localization)/config/hardwareEKF.yaml" />
-        <remap from="odometry/filtered" to="traxter/odometry/filtered"/>
+        <remap from="odometry/filtered" to="odom"/>
       </node>
     </group>
 
@@ -21,7 +21,7 @@
       <node pkg="robot_localization" exec="ekf_node" name="ekf_filter_node">
         <param name="use_sim_time" value="false" />
         <param from="$(find-pkg-share traxter_robot_localization)/config/hardwareEKF.yaml" />
-        <remap from="odometry/filtered" to="traxter/odometry/filtered"/>
+        <remap from="odometry/filtered" to="odom"/>
       </node>
     </group>
 

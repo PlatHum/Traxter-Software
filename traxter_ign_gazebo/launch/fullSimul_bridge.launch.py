@@ -66,22 +66,21 @@ def generate_launch_description():
     hokuyo_static_transform=launch_ros.actions.Node(
             package='tf2_ros',
             executable='static_transform_publisher',
-            arguments = ["0", "0", "0", "0", "0", "0", "hokuyo", "traxter/base_link/hokuyo"],
-            parameters=[{'use_sim_time': True}]
+            arguments = ["0", "0", "0", "0", "0", "0", "hokuyo", "traxter/base_link/hokuyo"]
+            
     )
     
     realsense_static_transform=launch_ros.actions.Node(
             package='tf2_ros',
             executable='static_transform_publisher',
-            arguments = ["0.02", "0", "0", "0", "0", "0", "d435","traxter/base_link/rgbd_camera"],
-            parameters=[{'use_sim_time': True}]
+            arguments = ["0.02", "0", "0", "0", "0", "0", "d435","traxter/base_link/rgbd_camera"]
+            
     )
 
     imu_static_transform=launch_ros.actions.Node(
             package='tf2_ros',
             executable='static_transform_publisher',
-            arguments = ["0", "0", "0", "0", "0", "0", "imu_link", "traxter/base_link/imu"],
-            parameters=[{'use_sim_time': True}]
+            arguments = ["0", "0", "0", "0", "0", "0", "imu_link", "traxter/base_link/imu"]
     )
 
 

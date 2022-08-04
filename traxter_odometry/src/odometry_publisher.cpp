@@ -7,6 +7,10 @@
 #include <nav_msgs/msg/path.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <math.h>
+#include <cstdio>  // for EOF
+#include <string>
+#include <sstream>
+#include <vector>
 #include <limits.h>
 using std::placeholders::_1;
 using namespace std::chrono_literals;
@@ -33,6 +37,8 @@ public:
     this->declare_parameter("_E_D", 1.0);
     this->declare_parameter("_E_B", 1.0);
     this->declare_parameter("_update_odometry", false);
+    this->declare_parameter("_limit_covariance", "[[0.0017, 0.00259,  0.00507], [0.00259, 0.0041,  0.0078], [0.00507, 0.0078,  0.018]]");
+    this->declare_parameter("_dynamic_covariance", false);
     rclcpp::QoS qos(3);
     qos.keep_last(3);
     qos.best_effort();
@@ -51,7 +57,9 @@ public:
     this->get_parameter("_k_L", K_L);
     this->get_parameter("_E_D", E_D);
     this->get_parameter("_E_B", E_B);
-    this->get_parameter("_update_odometry", UPDATE_ODOM); 
+    this->get_parameter("_update_odometry", UPDATE_ODOM);
+    this->get_parameter("_limit_covariance", LIMIT_COVARIANCE);
+    this->get_parameter("_dynamic_covariance", DYNAMIC_COVARIANCE);  
 
     switch (RUN_TYPE)
     {
@@ -82,7 +90,7 @@ public:
     if (UPDATE_ODOM){
           update_timer_ = create_wall_timer( 500ms, std::bind(&odometryPublisher::update_timer_callback, this));
           filter_subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
-          "traxter/odometry/filtered", 1, std::bind(&odometryPublisher::update_odom_callback, this, _1));
+          "odom", 1, std::bind(&odometryPublisher::update_odom_callback, this, _1));
     }
     
 
@@ -96,6 +104,8 @@ private:
 
   void setup_variables()
   {
+    std::string ERROR;
+    limit_covariance = parseVVF(LIMIT_COVARIANCE, ERROR);
 
     effectiveWheelBase=WHEEL_BASE/E_B;
     newOdom.pose.pose.position.x = INITIAL_X;
@@ -120,6 +130,7 @@ private:
 
     traxter_joints.name = {"front_left_wheel_joint", "front_right_wheel_joint", "rear_left_wheel_joint", "rear_right_wheel_joint"};   
     
+    if(DYNAMIC_COVARIANCE){
     motion_increment_covar[0][1]=0.0;
     motion_increment_covar[1][0]=0.0;
     pose_jacobian[0][0]=1.0;
@@ -131,6 +142,22 @@ private:
     pose_jacobian[2][2]=1.0;
     motion_increment_jacobian[2][0]=1/effectiveWheelBase;
     motion_increment_jacobian[2][1]=-1/effectiveWheelBase;
+    }else{
+      for (size_t i = 0; i < 3; i++)
+      {
+        for (size_t j = 0; j <= i; j++)
+        {
+          newOdom.pose.covariance[mapCov[i][j]]= limit_covariance[i][j];
+          newOdom.twist.covariance[mapCov[i][j]]=1.3*limit_covariance[i][j];
+          if (i!=j){
+            newOdom.pose.covariance[mapCov[j][i]]=newOdom.pose.covariance[mapCov[i][j]];
+            newOdom.twist.covariance[mapCov[j][i]]= newOdom.twist.covariance[mapCov[i][j]];
+          }
+        }
+      }
+      
+    }
+
     oldTime = this->now();
     newOdom.header.stamp = oldTime;
     oldOdom.header.stamp = newOdom.header.stamp;
@@ -293,20 +320,23 @@ private:
       newOdom.pose.pose.orientation.y = q.y();
       newOdom.pose.pose.orientation.z = q.z();
       newOdom.pose.pose.orientation.w = q.w();
-      updateOdomPoseCovariance(deltaS_R, deltaS_L, deltaS, tempAngle);
 
       //estimate velocity
       double deltaT=(newTime.nanoseconds() - oldTime.nanoseconds())*1e-9;
       if(deltaT>0.001){//avoid weird time behaviour in simulation
         newOdom.twist.twist.linear.x = deltaS/deltaT;
-        newOdom.twist.twist.angular.z = deltaTheta/deltaT; 
+        newOdom.twist.twist.angular.z = deltaTheta/deltaT;
+      }
+
+      if (DYNAMIC_COVARIANCE){
+        updateOdomPoseCovariance(deltaS_R, deltaS_L, deltaS, tempAngle);
         updateOdomTwistCovariance(deltaT);
+        oldOdom.pose.covariance = newOdom.pose.covariance;
       }
       //new becomes old
       oldYawEuler=newYawEuler;
       oldOdom.pose.pose.position.x = newOdom.pose.pose.position.x;
       oldOdom.pose.pose.position.y = newOdom.pose.pose.position.y;
-      oldOdom.pose.covariance = newOdom.pose.covariance;
       oldTime = newTime;
       oldOdom.header.stamp = newOdom.header.stamp;
     }else{
@@ -369,11 +399,14 @@ private:
           }
         }
         newOdom.pose.covariance[mapCov[i][k]]=tempA+tempB ;
+        if (abs(newOdom.pose.covariance[mapCov[i][k]])>abs(limit_covariance[i][k])){
+          newOdom.pose.covariance[mapCov[i][k]]= ((newOdom.pose.covariance[mapCov[i][k]]>=0)+0.0)*limit_covariance[i][k];
+        }
         if (i!=k){
           newOdom.pose.covariance[mapCov[k][i]]=newOdom.pose.covariance[mapCov[i][k]];
         }
-      }
-    }
+      } 
+    }   
   };
 
   void updateOdomTwistCovariance(double deltaT){
@@ -381,7 +414,19 @@ private:
     for (size_t k = 0; k < 3; k++){
       for (size_t i = 0; i <= k; i++){ //covariance matrix is symetric
         newOdom.twist.covariance[mapCov[i][k]] = (newOdom.pose.covariance[mapCov[i][k]]-oldOdom.pose.covariance[mapCov[i][k]])/deltaT;
-
+        switch (i)
+        {
+        case 2:
+          newOdom.twist.covariance[mapCov[i][k]] = std::max(newOdom.twist.covariance[mapCov[i][k]], 
+                                                      0.5*(newOdom.twist.covariance[mapCov[i][k]] + 
+                                                      newOdom.twist.twist.angular.z * limit_covariance[i][k])); 
+          break;
+        default:
+          newOdom.twist.covariance[mapCov[i][k]] = std::max(newOdom.twist.covariance[mapCov[i][k]], 
+                                                      0.5*(newOdom.twist.covariance[mapCov[i][k]] + 
+                                                      newOdom.twist.twist.linear.x * limit_covariance[i][k]));
+          break;
+        }
         if (i!=k){
           newOdom.twist.covariance[mapCov[k][i]]=newOdom.twist.covariance[mapCov[i][k]];
         }
@@ -414,6 +459,65 @@ private:
       timeToUpdate=false;
     }
     
+  };
+
+  std::vector<std::vector<double>> parseVVF(const std::string & input, std::string & error_return)
+  {
+    std::vector<std::vector<double>> result;
+
+    std::stringstream input_ss(input);
+    int depth = 0;
+    std::vector<double> current_vector;
+    while (!!input_ss && !input_ss.eof()) {
+      switch (input_ss.peek()) {
+      case EOF:
+        break;
+      case '[':
+        depth++;
+        if (depth > 2) {
+          error_return = "Array depth greater than 2";
+          return result;
+        }
+        input_ss.get();
+        current_vector.clear();
+        break;
+      case ']':
+        depth--;
+        if (depth < 0) {
+          error_return = "More close ] than open [";
+          return result;
+        }
+        input_ss.get();
+        if (depth == 1) {
+          result.push_back(current_vector);
+        }
+        break;
+      case ',':
+      case ' ':
+      case '\t':
+        input_ss.get();
+        break;
+      default:  // All other characters should be part of the numbers.
+        if (depth != 2) {
+          std::stringstream err_ss;
+          err_ss << "Numbers at depth other than 2. Char was '" << char(input_ss.peek()) << "'.";
+          error_return = err_ss.str();
+          return result;
+        }
+        double value;
+        input_ss >> value;
+        if (!!input_ss) {
+          current_vector.push_back(value);
+        }
+        break;
+      }
+    }
+    if (depth != 0) {
+      error_return = "Unterminated vector string.";
+    } else {
+      error_return = "";
+    }
+    return result;
   };
 
 
@@ -461,6 +565,9 @@ private:
   bool calculatingOdom=false;
   bool timeToUpdate=false;
   bool timeToPublish=true;
+  bool covarianceLimit=false;
+
+  std::vector<std::vector<double>> limit_covariance;
 
 //parameter holders
   int TICKSPERWHEELREV;
@@ -477,6 +584,8 @@ private:
   double ALPHA_R;
   double ALPHA_L;
   bool UPDATE_ODOM;
+  bool DYNAMIC_COVARIANCE;
+  std::string LIMIT_COVARIANCE;
 
   //time instances because rclcpp is a mess with time and header stamps
   rclcpp::Time oldTime;

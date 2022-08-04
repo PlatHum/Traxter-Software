@@ -5,8 +5,7 @@
 #include <traxter_msgs/msg/light_imu.hpp>
 #include "sensor_msgs/msg/imu.hpp"
 #include <tf2/LinearMath/Quaternion.h>
-#include <iterator>
-#include <random>
+
 #include <cstdio>  // for EOF
 #include <string>
 #include <sstream>
@@ -231,8 +230,6 @@ void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
   std::string ANGULAR_VELOCITY_COVARIANCE;
   std::string LINEAR_ACCELERATION_COVARIANCE;
   int RUN_TYPE;
-  std::default_random_engine generator;
-  std::normal_distribution<double> dist;
   int mapCov[3][3] = {{0, 1, 2}, {3, 4, 5}, {6, 7, 8}}; 
   std::vector<std::vector<double>> orientation_covariance;
   std::vector<std::vector<double>> angular_velocity_covariance;
