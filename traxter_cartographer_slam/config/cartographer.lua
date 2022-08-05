@@ -18,9 +18,9 @@ options = {
   num_subdivisions_per_laser_scan = 1,
   num_point_clouds = 0,
   lookup_transform_timeout_sec = 0.06,
-  submap_publish_period_sec = 0.1,
-  pose_publish_period_sec = 6.6e-2,
-  trajectory_publish_period_sec = 8.6e-2,
+  submap_publish_period_sec = 0.067,
+  pose_publish_period_sec = 8e-2,
+  trajectory_publish_period_sec = 9e-2,
   rangefinder_sampling_ratio = 1.,
   odometry_sampling_ratio = 1.,
   fixed_frame_pose_sampling_ratio = 1.,
@@ -37,8 +37,13 @@ TRAJECTORY_BUILDER_2D.use_imu_data = true
 TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true 
 TRAJECTORY_BUILDER_2D.motion_filter.max_angle_radians = math.rad(0.1)
 
-POSE_GRAPH.constraint_builder.min_score = 0.65
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.7
+POSE_GRAPH.constraint_builder.min_score = 0.7
+POSE_GRAPH.constraint_builder.global_localization_min_score = 0.75
+
+POSE_GRAPH.optimization_problem.local_slam_pose_translation_weight=0.85
+POSE_GRAPH.optimization_problem.local_slam_pose_rotation_weight=0.85
+POSE_GRAPH.optimization_problem.odometry_translation_weight = 0.95
+POSE_GRAPH.optimization_problem.odometry_rotation_weight = 0.95
 
 -- POSE_GRAPH.optimize_every_n_nodes = 0
 
