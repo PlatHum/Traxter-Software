@@ -1,5 +1,6 @@
 # For now, ignore driver packages
-cartographer_slam/
+rtabmap/
+rtabmap_ros/
 
 # No VSCode please
 .vscode/
