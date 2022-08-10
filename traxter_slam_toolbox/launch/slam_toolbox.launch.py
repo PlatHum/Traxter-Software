@@ -5,6 +5,7 @@ from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
+from launch.substitutions import PathJoinSubstitution
 
 
 def generate_launch_description():
@@ -13,17 +14,18 @@ def generate_launch_description():
 
     declare_use_sim_time_argument = DeclareLaunchArgument(
         'use_sim_time',
-        default_value='true',
+        default_value='false',
         description='Use simulation/Gazebo clock')
     declare_slam_params_file_cmd = DeclareLaunchArgument(
         'slam_params_file',
-        default_value=os.path.join(get_package_share_directory("traxter_slam_toolbox"),
-                                   'config', 'mapper_params_online_async.yaml'),
-        description='Full path to the ROS2 parameters file to use for the slam_toolbox node')
+        default_value='realAsync.yaml',
+        description='Name of the ROS2 parameters file to use for the slam_toolbox node')
+
+
+    pkg_traxter_slam_toolbox = get_package_share_directory('traxter_slam_toolbox')
 
     start_async_slam_toolbox_node = Node(
-        parameters=[
-            slam_params_file,
+        parameters=[PathJoinSubstitution([pkg_traxter_slam_toolbox, 'config', slam_params_file]),
             {'use_sim_time': use_sim_time}
         ],
         package='slam_toolbox',

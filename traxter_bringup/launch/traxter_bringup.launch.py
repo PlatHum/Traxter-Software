@@ -23,6 +23,7 @@ def generate_launch_description():
     world = LaunchConfiguration('world')
     runType = LaunchConfiguration('runType')
     navType = LaunchConfiguration('navType')
+    slamType = LaunchConfiguration('slamType')
     odomType = LaunchConfiguration('odomType')
     configFile = LaunchConfiguration('configFile')
     runType_arg = DeclareLaunchArgument(
@@ -39,6 +40,11 @@ def generate_launch_description():
           'navType',
           default_value='manual',
           description='Navigation type. [ manual , auto ]')
+
+    slamType_arg = DeclareLaunchArgument(
+          'slamType',
+          default_value='none',
+          description='Navigation type. [ none, carto, tools, rtab, none ]')
 
     odomType_arg = DeclareLaunchArgument(
           'odomType',
@@ -69,6 +75,14 @@ def generate_launch_description():
             [os.path.join(get_package_share_directory('traxter_bringup'), 'launch','navType.launch.xml')],
             launch_arguments={
                 'navType': navType
+            }.items()
+        )
+
+    slamType_launch = IncludeLaunchDescription(
+            [os.path.join(get_package_share_directory('traxter_bringup'), 'launch','slamType.launch.xml')],
+            launch_arguments={
+                'runType': runType,
+                'slamType': slamType
             }.items()
         )
 
@@ -109,10 +123,12 @@ def generate_launch_description():
         world_arg,
         runType_arg,
         navType_arg,
+        slamType_arg,
         odomType_arg,
         configFile_arg,
         runType_launch,
         navType_launch,
+        slamType_launch,
         odometry_launch,
         imu_launch,
         kinematics_launch,

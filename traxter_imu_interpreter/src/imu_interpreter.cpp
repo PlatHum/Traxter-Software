@@ -147,7 +147,12 @@ void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
       }
       previousTime = currentTime;
       msg->header.frame_id="imu_link";
-      publisher_->publish(*msg);
+
+      if(cycles>29){
+        publisher_->publish(*msg);
+      }else{
+        cycles++;
+      }
 
   standard_imu_message.angular_velocity.x=msg->angular_velocity.x;
   standard_imu_message.angular_velocity.y=msg->angular_velocity.y;
@@ -239,6 +244,7 @@ void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
   double prevPitch = 0;
   double prevRoll = 0;
   double prevYaw = 0;
+  int cycles=0;
 };
 
 int main(int argc, char * argv[])

@@ -29,7 +29,7 @@ def generate_launch_description():
             '/world/traxter_world/model/traxter/joint_state@sensor_msgs/msg/JointState[ignition.msgs.Model',
             '/odometry/true@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
             #'/odometry/noisy@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
-            '/world/traxter_world/model/traxter/link/base_link/sensor/rgbd_camera/points@sensor_msgs/msg/PointCloud2[ignition.msgs.PointCloudPacked',
+            #'/world/traxter_world/model/traxter/link/base_link/sensor/rgbd_camera/points@sensor_msgs/msg/PointCloud2[ignition.msgs.PointCloudPacked',
             '/world/traxter_world/model/traxter/link/base_link/sensor/rgbd_camera/image@sensor_msgs/msg/Image[ignition.msgs.Image',
             '/world/traxter_world/model/traxter/link/base_link/sensor/rgbd_camera/depth_image@sensor_msgs/msg/Image[ignition.msgs.Image',
             '/world/traxter_world/model/traxter/link/base_link/sensor/rgbd_camera/camera_info@sensor_msgs/msg/CameraInfo[ignition.msgs.CameraInfo',
@@ -45,10 +45,10 @@ def generate_launch_description():
                 ('/front_right_wheel/cmd_vel','/traxter/simulation/command/right'),
                 ('/front_left_wheel/cmd_vel','/traxter/simulation/command/left'),
                 ('/world/traxter_world/model/traxter/joint_state','/joint_states'),
-                ('/world/traxter_world/model/traxter/link/base_link/sensor/rgbd_camera/points','/traxter/simulation/camera/point_cloud'),
-                ('/world/traxter_world/model/traxter/link/base_link/sensor/rgbd_camera/image','/traxter/simulation/camera/image'),
-                ('/world/traxter_world/model/traxter/link/base_link/sensor/rgbd_camera/depth_image','/traxter/simulation/camera/depth_image'),
-                ('/world/traxter_world/model/traxter/link/base_link/sensor/rgbd_camera/camera_info','/traxter/simulation/camera/camera_info'),
+                #('/world/traxter_world/model/traxter/link/base_link/sensor/rgbd_camera/points','/traxter/simulation/camera/point_cloud'),
+                ('/world/traxter_world/model/traxter/link/base_link/sensor/rgbd_camera/image','rgb/image'),
+                ('/world/traxter_world/model/traxter/link/base_link/sensor/rgbd_camera/depth_image','depth/image'),
+                ('/world/traxter_world/model/traxter/link/base_link/sensor/rgbd_camera/camera_info','rgb/camera_info'),
                 #('/model/traxter/tf','/tf')
                 ('/imu','/traxter/simulation/imu')
             ]
@@ -66,21 +66,23 @@ def generate_launch_description():
     hokuyo_static_transform=launch_ros.actions.Node(
             package='tf2_ros',
             executable='static_transform_publisher',
-            arguments = ["0", "0", "0", "0", "0", "0", "hokuyo", "traxter/base_link/hokuyo"]
-            
+            arguments = ['--x', '0', '--y', '0', '--z', '0', '--yaw', '0', '--pitch', '0', '--roll', '0', '--frame-id', 'hokuyo', '--child-frame-id', 'traxter/base_link/hokuyo'],
+            parameters=[{'use_sim_time': True}]
     )
     
     realsense_static_transform=launch_ros.actions.Node(
             package='tf2_ros',
             executable='static_transform_publisher',
-            arguments = ["0.02", "0", "0", "0", "0", "0", "d435","traxter/base_link/rgbd_camera"]
+            arguments = ['--x', '0', '--y', '0', '--z', '0', '--yaw', '-1.570796327', '--pitch', '0', '--roll', '4.71238898', '--frame-id', 'd435', '--child-frame-id', 'traxter/base_link/rgbd_camera'],
+            parameters=[{'use_sim_time': True}]
             
     )
 
     imu_static_transform=launch_ros.actions.Node(
             package='tf2_ros',
             executable='static_transform_publisher',
-            arguments = ["0", "0", "0", "0", "0", "0", "imu_link", "traxter/base_link/imu"]
+            arguments = ['--x', '0', '--y', '0', '--z', '0', '--yaw', '0', '--pitch', '0', '--roll', '0', '--frame-id', 'imu_link', '--child-frame-id', 'traxter/base_link/imu'],
+            parameters=[{'use_sim_time': True}]
     )
 
 
