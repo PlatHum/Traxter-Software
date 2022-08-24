@@ -1,5 +1,7 @@
 # For now, ignore driver packages
-cartographer_slam/
+rtabmap/
+rtabmap_ros/
+traxter_ign_gazebo/
 
 # No VSCode please
 .vscode/

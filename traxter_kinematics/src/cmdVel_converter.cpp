@@ -17,7 +17,7 @@ public:
 
     this->declare_parameter("_wheel_radius", 0.0355);
     this->declare_parameter("_wheel_base", 0.225);
-    this->declare_parameter("_run_type", 0);//0 full simulation, 1 hardware in the loop, 2 real hardware
+    this->declare_parameter("_run_type", 2);//0 full simulation, 1 hardware in the loop, 2 real hardware
 
     // Create a Subscriber object that will listen to the /counter topic and will call the 'topic_callback' function       // each time it reads something from the topic
     subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(

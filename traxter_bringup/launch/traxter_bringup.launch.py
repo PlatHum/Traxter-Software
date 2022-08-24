@@ -23,9 +23,12 @@ def generate_launch_description():
     world = LaunchConfiguration('world')
     runType = LaunchConfiguration('runType')
     navType = LaunchConfiguration('navType')
+    slamType = LaunchConfiguration('slamType')
+    odomType = LaunchConfiguration('odomType')
+    configFile = LaunchConfiguration('configFile')
     runType_arg = DeclareLaunchArgument(
           'runType',
-          default_value="fullSimul",
+          default_value="realHard",
           description='Type of run. [fullSimul,inLoop,realHard]')
 
     world_arg = DeclareLaunchArgument(
@@ -38,17 +41,33 @@ def generate_launch_description():
           default_value='manual',
           description='Navigation type. [ manual , auto ]')
 
-    traxter_description_launch = IncludeLaunchDescription(
-      PythonLaunchDescriptionSource([os.path.join(
-         get_package_share_directory('traxter_description'), 'launch',
-         'traxter_description.launch.py')])
-      )
+    slamType_arg = DeclareLaunchArgument(
+          'slamType',
+          default_value='none',
+          description='Navigation type. [ none, carto, tools, rtab, none ]')
+
+    odomType_arg = DeclareLaunchArgument(
+          'odomType',
+          default_value='default',
+          description='Odometry calculation type. [ default , debug ]')
+
+    configFile_arg = DeclareLaunchArgument(
+          'configFile',
+          default_value='default',
+          description='What config parameter file to load from config directory of bringup.')
+
+    #traxter_description_launch = IncludeLaunchDescription(
+     # PythonLaunchDescriptionSource([os.path.join(
+      #   get_package_share_directory('traxter_description'), 'launch',
+       #  'traxter_description.launch.py')])
+      #)
 
     runType_launch = IncludeLaunchDescription(
             [os.path.join(get_package_share_directory('traxter_bringup'), 'launch','runType.launch.xml')],
             launch_arguments={
                 'world': world,
-                'runType': runType
+                'runType': runType,
+                'configFile':configFile
             }.items()
         )
 
@@ -59,14 +78,62 @@ def generate_launch_description():
             }.items()
         )
 
+    slamType_launch = IncludeLaunchDescription(
+            [os.path.join(get_package_share_directory('traxter_bringup'), 'launch','slamType.launch.xml')],
+            launch_arguments={
+                'runType': runType,
+                'slamType': slamType
+            }.items()
+        )
+
+    odometry_launch = IncludeLaunchDescription(
+            [os.path.join(get_package_share_directory('traxter_odometry'), 'launch','traxter_odometry.launch.xml')],
+            launch_arguments={
+                'odomType': odomType,
+                'configFile':configFile,
+                'runType': runType
+            }.items()
+        )
+
+    imu_launch = IncludeLaunchDescription(
+            [os.path.join(get_package_share_directory('traxter_imu_interpreter'), 'launch','imu_interpreter.launch.xml')],
+            launch_arguments={
+                'configFile':configFile,
+                'runType': runType
+            }.items()
+        )
+
+    kinematics_launch = IncludeLaunchDescription(
+            [os.path.join(get_package_share_directory('traxter_kinematics'), 'launch','traxter_kinematics.launch.xml')],
+            launch_arguments={
+                'configFile':configFile,
+                'runType': runType
+            }.items()
+        )
+
+    robot_localization_launch = IncludeLaunchDescription(
+            [os.path.join(get_package_share_directory('traxter_robot_localization'), 'launch','traxter_robot_localization.launch.xml')],
+            launch_arguments={
+                'runType': runType
+            }.items()
+        )
+
 
     return LaunchDescription([
         world_arg,
         runType_arg,
         navType_arg,
-        traxter_description_launch,
+        slamType_arg,
+        odomType_arg,
+        configFile_arg,
         runType_launch,
-        navType_launch
+        navType_launch,
+        slamType_launch,
+        odometry_launch,
+        imu_launch,
+        kinematics_launch,
+        robot_localization_launch
+
     ])
 
     #'ign_args': ['-r -v 4 ', PathJoinSubstitution([pkg_traxter_ign_gazebo, 'worlds', world])]

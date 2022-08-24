@@ -1,0 +1,39 @@
+<launch>
+     <arg name="runType" default="realHard" />
+
+<group unless="$(eval '\'$(var runType)\' == \'realHard\'')">
+    <!-- Use RGBD synchronization -->
+    <node pkg="rtabmap_ros" exec="rgbd_sync" name="rgbd_sync" args="standalone rtabmap_ros/rgbd_sync" output="screen">
+
+      <param name="approx_sync" value="false"/> 
+      <param name="queue_size" value='5'/>
+    </node>
+
+    <node name="rtabmap" pkg="rtabmap_ros" exec="rtabmap" output="screen" args="--delete_db_on_start">         
+          <param from="$(find-pkg-share traxter_rtabmap)/config/simRtabmap.yaml" />
+          <param name="use_sim_time" value="true"/> 
+    </node>
+
+     <node name="rtabmapviz" pkg="rtabmap_ros" exec="rtabmapviz">        
+          <param from="$(find-pkg-share traxter_rtabmap)/config/simRtabmap.yaml" />
+    </node>
+</group>
+
+<group if="$(eval '\'$(var runType)\' == \'realHard\'')">
+         <!-- Use RGBD synchronization -->
+    <node pkg="rtabmap_ros" exec="rgbd_sync" name="rgbd_sync" args="standalone rtabmap_ros/rgbd_sync" output="screen">
+
+      <param name="approx_sync" value="false"/> 
+      <param name="queue_size" value='5'/>
+    </node>
+
+    <node name="rtabmap" pkg="rtabmap_ros" exec="rtabmap" output="screen" args="--delete_db_on_start">         
+          <param from="$(find-pkg-share traxter_rtabmap)/config/realRtabmap.yaml" />
+          <param name="use_sim_time" value="true"/> 
+    </node>
+
+     <node name="rtabmapviz" pkg="rtabmap_ros" exec="rtabmapviz">        
+          <param from="$(find-pkg-share traxter_rtabmap)/config/realRtabmap.yaml" />
+    </node>
+</group>
+</launch>

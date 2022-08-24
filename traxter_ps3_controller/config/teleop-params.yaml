@@ -14,5 +14,5 @@ teleop_twist_joy_node:
     scale_angular_turbo:
       yaw: 1.0
 
-    enable_button: 16 #does not work
+    enable_button: 1 #does not work
     enable_turbo_button: -1 # no turbo
