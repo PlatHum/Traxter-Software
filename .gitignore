@@ -1,6 +1,7 @@
 # For now, ignore driver packages
 rtabmap/
 rtabmap_ros/
+qualisys_cpp_sdk/
 
 # No VSCode please
 .vscode/

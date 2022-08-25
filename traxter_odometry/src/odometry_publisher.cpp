@@ -175,7 +175,7 @@ private:
       oldLticks=0;
     }
     newTime = this->now();
-    newOdom.header.stamp = newTime;;
+    newOdom.header.stamp = newTime;
     deltaEncoderTicks();
     runAlgorithm();
     publishJointState();
