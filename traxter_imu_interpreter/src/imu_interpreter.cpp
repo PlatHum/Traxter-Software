@@ -22,9 +22,9 @@ public:
   {
 
     this->declare_parameter("_run_type", 2);//0 full simulation, 1 hardware in the loop, 2 real hardware
-    this->declare_parameter("_orientation_covariance", "[[1.704e-05, 2.603e-07,  7.682e-07], [2.603e-07, 1.663e-05,  -6.332e-07], [7.682e-07, -6.332e-07,  1.521e-05]]");
-    this->declare_parameter("_angular_velocity_covariance", "[[4.265e-06, 6.012e-08,  1.107e-08], [6.012e-08, 8.837e-06,  5.647e-08], [1.107e-08, 5.647e-08,  4.042e-06]]");
-    this->declare_parameter("_linear_acceleration_covariance", "[[0.0002836, 4.167e-06,  -4.942e-08], [4.167e-06, 0.0002861,  9.564e-06], [-4.942e-08, 9.564e-06,  0.0002688]]");
+    this->declare_parameter("_orientation_covariance", "[[0.0, 0.0,  0.0], [0.0, 0.0,  0.0], [0.0, 0.0,  0.0001826]]");
+    this->declare_parameter("_angular_velocity_covariance", "[[2.439e-05, 5.169e-07,  -2.577e-07], [5.169e-07, 6.305e-06,  -2.786e-07], [-2.577e-07, -2.786e-07,  2.267e-05]]");
+    this->declare_parameter("_linear_acceleration_covariance", "[[0.0001661, -9.742e-06,  -2.256e-05], [-9.742e-06, 0.0001219,  2.224e-05], [-2.256e-05, 2.224e-05,  0.0004139]]");
 
 
     rclcpp::QoS qos(3);
@@ -95,10 +95,17 @@ private:
       biasQuat[3]=msg->q3;
       isFirst=false;
     }
-    standard_imu_message.orientation.x=(-msg->q1 + biasQuat[1])/100.0;
+    tf2::Quaternion q((-msg->q1 + biasQuat[1])/100.0,(-msg->q2 + biasQuat[2])/100.0,(msg->q3 - biasQuat[3])/100.0,(msg->q0 - biasQuat[0])/100.0);
+/*     standard_imu_message.orientation.x=(-msg->q1 + biasQuat[1])/100.0;
     standard_imu_message.orientation.y=(-msg->q2 + biasQuat[2])/100.0;
     standard_imu_message.orientation.z=(msg->q3 - biasQuat[3])/100.0;
-    standard_imu_message.orientation.w=(msg->q0 - biasQuat[0])/100.0;
+    standard_imu_message.orientation.w=(msg->q0 - biasQuat[0])/100.0; */
+    q.normalize();
+
+      standard_imu_message.orientation.x= q.x();
+      standard_imu_message.orientation.y= q.y();
+      standard_imu_message.orientation.z= q.z();
+      standard_imu_message.orientation.w= q.w();
 
     standard_imu_message.angular_velocity.x=msg->gyrox/100.0;
     standard_imu_message.angular_velocity.y=msg->gyroy/100.0;

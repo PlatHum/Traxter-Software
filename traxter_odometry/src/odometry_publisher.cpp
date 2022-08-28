@@ -175,7 +175,7 @@ private:
       oldLticks=0;
     }
     newTime = this->now();
-    newOdom.header.stamp = newTime;;
+    newOdom.header.stamp = newTime;
     deltaEncoderTicks();
     runAlgorithm();
     publishJointState();
@@ -349,8 +349,9 @@ private:
 
 
   void publishJointState(){
-    double left_side_position= static_cast<float>(newLticks/TICKSPERWHEELREV*PI/180);
-    double right_side_position=static_cast<float>(newRticks/TICKSPERWHEELREV*PI/180);
+
+    float left_side_position= static_cast<float>(newLticks)/static_cast<float>(TICKSPERWHEELREV)*2.0*PI;
+    float right_side_position=static_cast<float>(newRticks)/static_cast<float>(TICKSPERWHEELREV)*2.0*PI;
 
     traxter_joints.position.clear();
     traxter_joints.position={left_side_position,right_side_position,left_side_position,right_side_position};
