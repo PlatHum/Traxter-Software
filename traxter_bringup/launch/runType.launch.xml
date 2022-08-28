@@ -28,12 +28,19 @@
     </include> 
     <include file="$(find-pkg-share traxter_ign_gazebo)/launch/inLoop_bridge.launch.py">
     </include>
+    <include file="$(find-pkg-share traxter_bringup)/launch/lowLevelAgent.launch.py">
+    </include>
   </group>
 
   <group if="$(eval '\'$(var runType)\' == \'realHard\'')">  
     <include file="$(find-pkg-share traxter_description)/launch/traxter_description.launch.py">
       <arg name="simTime" value= 'False'/>
     </include>
+    <include file="$(find-pkg-share traxter_bringup)/launch/lowLevelAgent.launch.py">
+    </include>
+<!--     <node pkg="urg_node" exec="urg_node_driver" name="urg_node">
+      <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
+    </node>  -->
   </group>
 
 </launch>
