@@ -14,9 +14,8 @@
         </include>   
     </group>
     <group if="$(eval '\'$(var realsense)\' == \'true\'')">
-        <node pkg="realsense2_camera" exec="realsense2_camera_node" name="realsense_camera">
-            <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
-        </node>   
+        <include file="$(find-pkg-share traxter_bringup)/launch/realsense.launch.py">
+        </include>   
     </group>
 
 </launch>
