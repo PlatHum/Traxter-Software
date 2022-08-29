@@ -278,10 +278,10 @@
     <!-- D435 Intel RealSense -->
     <joint name="camera_joint" type="fixed">
         <parent link="camera_support"/>
-        <child link="d435"/>
+        <child link="camera_link"/>
         <origin xyz="0.015 0 ${camera_height* 0.5}" rpy="0 0 0"/>
     </joint>
-    <link name="d435">
+    <link name="camera_link">
         <inertial>
             <mass value="0.0615752"/>
             <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -353,7 +353,7 @@
         <link name="imu_link"></link>
 
         <!-- Depth Camera -->
-    <gazebo reference="d435"> <!-- values taken from https://fuel.gazebosim.org/1.0/OpenRobotics/models/Intel RealSense D435 -->
+    <gazebo reference="camera_link"> <!-- values taken from https://fuel.gazebosim.org/1.0/OpenRobotics/models/Intel RealSense D435 -->
         <sensor name="rgbd_camera" type="rgbd_camera">
         <pose>0.02 0 0 0 0 0</pose>
             <always_on>1</always_on>

@@ -8,29 +8,25 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
 
+   jsonpath=[os.path.join(
+         get_package_share_directory('traxter_bringup'), 'config'),'/d435.json']
    camera_node = IncludeLaunchDescription(
       PythonLaunchDescriptionSource([os.path.join(
          get_package_share_directory('realsense2_camera'), 'launch'),
-         '/rs_launch.py.launch.py']),
-      launch_arguments={'device_type': 'd435', 
-                        'enable_pointcloud': 'true',
+         '/rs_launch.py']),
+      launch_arguments={'device_type': 'd435',
+      			'json_file_path':jsonpath,
+      			'depth_module.profile':'640,480,15',
+      			'rgb_camera.profile':'640,480,15',
+      			'pointcloud.enable':'false',
                         'initial_reset': 'true',
-                        'align_depth': 'true',
-                        'base_frame_id': 'd435',
-                        'odom_frame_id': 'odom',
-                        'clip_distance': '3.0',
-                        'publish_tf': 'false',
-                        'filters': ['disparity','spatial','temporal','hole-filling','decimation'],
-                        'color_fps': '15.0',
-                        'color_height': '480',
-                        'color_width': '640',
-                        'color_qos': 'SENSOR_DATA',
-                        'depth_fps': '15.0',
-                        'depth_height': '480',
-                        'depth_width': '640',
-                        'depth_qos': 'SENSOR_DATA',
-                        'pointcloud_texture_index': '0',
-                        'pointcloud_texture_stream': 'RS2_STREAM_COLOR'}.items(),
+                        'enable_pose':'false',
+                        'enable_fisheye1':'false',
+                        'enable_fisheye2':'false',
+                        'align_depth.enable':'true',
+                        'enable_sync':'true',
+                        'allow_no_texture_points':'true',
+                        'decimation_filter.enable':'true'}.items(),
       )
 
    return LaunchDescription([
