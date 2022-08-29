@@ -4,12 +4,6 @@
     <arg name="runType" default="realHard" />
 
     <group if="$(eval '\'$(var slamType)\' == \'carto\'')">
-        <group unless="$(eval '\'$(var runType)\' == \'fullSimul\'')">
-            <include file="$(find-pkg-share traxter_cartographer_slam)/launch/cartographer.launch.py">
-            <arg name="use_sim_time" value= 'True'/>
-            <arg name="slam_params_file" value= 'simCartographer.lua'/>
-            </include>
-        </group>
         <group if="$(eval '\'$(var runType)\' == \'realHard\'')">
             <node pkg="urg_node" exec="urg_node_driver" name="urg_node">
                 <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
@@ -22,12 +16,6 @@
     </group>
 
     <group if="$(eval '\'$(var slamType)\' == \'tools\'')">
-        <group unless="$(eval '\'$(var runType)\' == \'fullSimul\'')">
-            <include file="$(find-pkg-share traxter_slam_toolbox)/launch/slam_toolbox.launch.py">
-            <arg name="use_sim_time" value= 'True'/>
-            <arg name="slam_params_file" value= 'simAsync.yaml'/>
-            </include>        
-        </group>
         <group if="$(eval '\'$(var runType)\' == \'realHard\'')">
             <node pkg="urg_node" exec="urg_node_driver" name="urg_node">
                 <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
@@ -40,6 +28,9 @@
     </group>
 
     <group if="$(eval '\'$(var slamType)\' == \'rtab\'')">
+        <node pkg="urg_node" exec="urg_node_driver" name="urg_node">
+            <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
+        </node> 
         <include file="$(find-pkg-share traxter_rtabmap)/launch/traxter_rtabmap.launch.xml">
             <arg name="runType" value= '$(var runType)'/>        
         </include>

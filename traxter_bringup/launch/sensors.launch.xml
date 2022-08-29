@@ -1,0 +1,22 @@
+<launch>    
+    
+    <arg name="hokuyo" default= "false" />
+    <arg name="realsense" default= "false" />
+    <arg name="lowlevel" default= "false" />
+
+    <group if="$(eval '\'$(var hokuyo)\' == \'true\'')">
+        <node pkg="urg_node" exec="urg_node_driver" name="urg_node">
+            <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
+        </node>    
+    </group>
+    <group if="$(eval '\'$(var lowlevel)\' == \'true\'')">
+        <include file="$(find-pkg-share traxter_bringup)/launch/lowLevelAgent.launch.py">
+        </include>   
+    </group>
+    <group if="$(eval '\'$(var realsense)\' == \'true\'')">
+        <node pkg="realsense2_camera" exec="realsense2_camera_node" name="realsense_camera">
+            <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
+        </node>   
+    </group>
+
+</launch>

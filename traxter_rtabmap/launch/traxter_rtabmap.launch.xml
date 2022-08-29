@@ -1,7 +1,7 @@
 <launch>
      <arg name="runType" default="realHard" />
 
-<group unless="$(eval '\'$(var runType)\' == \'realHard\'')">
+<group if="$(eval '\'$(var runType)\' == \'inLoop\'')">
     <!-- Use RGBD synchronization -->
     <node pkg="rtabmap_ros" exec="rgbd_sync" name="rgbd_sync" args="standalone rtabmap_ros/rgbd_sync" output="screen">
 
