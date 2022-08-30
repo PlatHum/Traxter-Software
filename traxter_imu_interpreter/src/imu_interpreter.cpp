@@ -89,10 +89,15 @@ private:
   void hardware_topic_callback(const traxter_msgs::msg::LightImu::SharedPtr msg)
   {
     if(isFirst){
-      biasQuat[0]=msg->q0 - 100;
+/*       biasQuat[0]=msg->q0 - 100;
       biasQuat[1]=msg->q1;
       biasQuat[2]=msg->q2;
-      biasQuat[3]=msg->q3;
+      biasQuat[3]=msg->q3; */
+            
+      biasQuat[0]=0;
+      biasQuat[1]=0;
+      biasQuat[2]=0;
+      biasQuat[3]=0;
       isFirst=false;
     }
     tf2::Quaternion q((-msg->q1 + biasQuat[1])/100.0,(-msg->q2 + biasQuat[2])/100.0,(msg->q3 - biasQuat[3])/100.0,(msg->q0 - biasQuat[0])/100.0);
