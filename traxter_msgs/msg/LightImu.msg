@@ -1,11 +1,13 @@
 int32 accx
 int32 accy
 int32 accz
+uint8 acc_status
 int32 gyrox
 int32 gyroy
 int32 gyroz
+uint8 gyro_status
 int32 q0
 int32 q1
 int32 q2
 int32 q3
-uint8 status
+uint8 mag_status

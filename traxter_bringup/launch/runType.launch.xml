@@ -4,6 +4,11 @@
   <arg name="world" default="test.sdf" />
   <arg name="configFile" default="default" />
 
+
+    <include file="$(find-pkg-share traxter_bringup)/launch/sensors.launch.xml">
+      <arg name="lowlevel" value= 'true'/>
+    </include>
+
   <group if="$(eval '\'$(var runType)\' == \'inLoop\'')"> 
     <include file="$(find-pkg-share traxter_description)/launch/traxter_description.launch.py">
       <arg name="simTime" value= 'True'/>
@@ -22,8 +27,6 @@
   <group if="$(eval '\'$(var runType)\' == \'realHard\'')">  
     <include file="$(find-pkg-share traxter_description)/launch/traxter_description.launch.py">
       <arg name="simTime" value= 'False'/>
-    </include>
-    <include file="$(find-pkg-share traxter_bringup)/launch/lowLevelAgent.launch.py">
     </include>
   </group>
 
