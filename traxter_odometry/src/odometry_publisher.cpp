@@ -174,9 +174,16 @@ private:
       oldRticks=0;
       oldLticks=0;
     }
+    if(isFirst){
+      oldRticks=newRticks;
+      oldLticks=newLticks;
+      isFirst=false;
+      oldTime = this->now();      
+    }
+
+    deltaEncoderTicks();
     newTime = this->now();
     newOdom.header.stamp = newTime;
-    deltaEncoderTicks();
     runAlgorithm();
     publishJointState();
   };
@@ -214,24 +221,37 @@ private:
 
     if (deltaLeftTicks > 1000000){
 
+      encoderFailure=true;
       deltaLeftTicks=imin + deltaLeftTicks;
     
     }else if (deltaLeftTicks < -1000000){
+
+      encoderFailure=true;
 
       deltaLeftTicks = imax-deltaLeftTicks;
     }
 
     if (deltaRightTicks > 1000000){
 
+      encoderFailure=true;
+
       deltaRightTicks=imin + deltaRightTicks;
     
     }else if (deltaRightTicks < -1000000){
+      encoderFailure=true;
 
       deltaRightTicks = imax-deltaRightTicks;
     }
-
-    oldLticks =newLticks;
-    oldRticks =newRticks;      
+    if (encoderFailure)
+    {
+      deltaRightTicks=0;
+      deltaLeftTicks=0;
+      encoderFailure=false;
+    }else{
+      oldLticks =newLticks;
+      oldRticks =newRticks; 
+    }
+         
 
   };
 
@@ -567,6 +587,9 @@ private:
   bool timeToUpdate=false;
   bool timeToPublish=true;
   bool covarianceLimit=false;
+
+  bool isFirst=true;
+  bool encoderFailure=false;
 
   std::vector<std::vector<double>> limit_covariance;
 

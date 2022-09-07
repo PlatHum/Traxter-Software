@@ -88,29 +88,14 @@ private:
   // Define a function called 'topic_callback' that receives a parameter named 'msg' 
   void hardware_topic_callback(const traxter_msgs::msg::LightImu::SharedPtr msg)
   {
-    if(isFirst){
-/*       biasQuat[0]=msg->q0 - 100;
-      biasQuat[1]=msg->q1;
-      biasQuat[2]=msg->q2;
-      biasQuat[3]=msg->q3; */
-            
-      biasQuat[0]=0;
-      biasQuat[1]=0;
-      biasQuat[2]=0;
-      biasQuat[3]=0;
-      isFirst=false;
-    }
-    tf2::Quaternion q((-msg->q1 + biasQuat[1])/100.0,(-msg->q2 + biasQuat[2])/100.0,(msg->q3 - biasQuat[3])/100.0,(msg->q0 - biasQuat[0])/100.0);
-/*     standard_imu_message.orientation.x=(-msg->q1 + biasQuat[1])/100.0;
-    standard_imu_message.orientation.y=(-msg->q2 + biasQuat[2])/100.0;
-    standard_imu_message.orientation.z=(msg->q3 - biasQuat[3])/100.0;
-    standard_imu_message.orientation.w=(msg->q0 - biasQuat[0])/100.0; */
+
+    tf2::Quaternion q((msg->q1)/100.0,(msg->q2)/100.0,(msg->q3)/100.0,(msg->q0)/100.0);
     q.normalize();
 
-      standard_imu_message.orientation.x= q.x();
-      standard_imu_message.orientation.y= q.y();
-      standard_imu_message.orientation.z= q.z();
-      standard_imu_message.orientation.w= q.w();
+    standard_imu_message.orientation.x= q.x();
+    standard_imu_message.orientation.y= q.y();
+    standard_imu_message.orientation.z= q.z();
+    standard_imu_message.orientation.w= q.w();
 
     standard_imu_message.angular_velocity.x=msg->gyrox/100.0;
     standard_imu_message.angular_velocity.y=msg->gyroy/100.0;
@@ -121,7 +106,36 @@ private:
     standard_imu_message.header.stamp=this->now();
 
     publisher_->publish(standard_imu_message);
+
+    if(msg->gyro_status<3){
+      uncalibGyro++;
+      if(uncalibGyro>100){
+        RCLCPP_WARN(this->get_logger(), "Gyroscope not fully calibrated! Level: %d/3",msg->gyro_status);
+        uncalibGyro=0;
+      }
+    }
+    if(msg->acc_status<3){
+      uncalibAccel++;
+      if(uncalibAccel>100){
+        RCLCPP_WARN(this->get_logger(), "Accelerometer not fully calibrated! Level: %d/3",msg->acc_status);
+        uncalibAccel=0;
+      }    
+    }
+    if(msg->mag_status<3){
+      uncalibMag++;
+      if(uncalibMag>100){
+        RCLCPP_WARN(this->get_logger(), "Magnetometer not fully calibrated! Level: %d/3",msg->mag_status);
+        uncalibMag=0;
+      }    
+    }
+
+      if(msg->mag_status>5 || msg->acc_status>5 || msg->gyro_status>5){
+
+        RCLCPP_FATAL(this->get_logger(), "IMU NOT CONNECTED PROPERLY!");
+
+      }    
   }
+
 
 void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
 

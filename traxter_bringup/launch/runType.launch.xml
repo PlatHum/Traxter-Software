@@ -23,8 +23,6 @@
     <include file="$(find-pkg-share traxter_description)/launch/traxter_description.launch.py">
       <arg name="simTime" value= 'False'/>
     </include>
-<!--     <include file="$(find-pkg-share traxter_bringup)/launch/lowLevelAgent.launch.py">
-    </include> -->
   </group>
 
 </launch>
