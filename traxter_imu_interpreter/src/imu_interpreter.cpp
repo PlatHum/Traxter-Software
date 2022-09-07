@@ -271,9 +271,6 @@ void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
   double prevRoll = 0;
   double prevYaw = 0;
   int cycles=0;
-  uint8_t uncalibMag=0;
-  uint8_t uncalibAccel=0;
-  uint8_t uncalibGyro=0;
 };
 
 int main(int argc, char * argv[])
