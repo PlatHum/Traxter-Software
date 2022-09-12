@@ -52,7 +52,7 @@ slam_toolbox:
     #The map to odom transform publish period. 0 will not publish transforms
     transform_publish_period: 0.05
     #Interval to update the 2D occupancy map for other applications / visualization
-    map_update_interval: 1.0
+    map_update_interval: 0.5
     #Resolution of the 2D occupancy map to generate
     resolution: 0.05
     #Maximum laser range to use for 2D occupancy map rastering
@@ -66,7 +66,7 @@ slam_toolbox:
     #The number of bytes to reset the stack size to, to enable serialization/deserialization of files.
     #A liberal default is 40000000, but less is fine.
     stack_size_to_use: 40000000
-    enable_interactive_mode: true
+    enable_interactive_mode: false
 
     # General Parameters
 
@@ -80,7 +80,7 @@ slam_toolbox:
     minimum_travel_heading: 0.025
     #The number of scans to buffer into a chain, 
     #also used as the number of scans in the circular buffer of localization mode
-    scan_buffer_size: 12
+    scan_buffer_size: 20
     #Maximum distance of a scan from the pose before removing the scan from the buffer
     scan_buffer_maximum_scan_distance: 8.0
     #The threshold link matching algorithm response for fine resolution to pass
