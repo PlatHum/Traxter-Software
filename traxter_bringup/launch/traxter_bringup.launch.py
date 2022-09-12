@@ -142,7 +142,8 @@ def generate_launch_description():
     record_launch = IncludeLaunchDescription(
             [os.path.join(get_package_share_directory('traxter_bringup'), 'launch','recordRosBag.launch.xml')],
             launch_arguments={
-                'recordFile': recordFile
+                'recordFile': recordFile,
+                'slamType': slamType
             }.items()
     )
 
