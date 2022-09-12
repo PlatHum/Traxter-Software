@@ -14,11 +14,11 @@
         _k_R: 0.0005
         _k_L: 0.0005
         _E_D: 1.00
-        _E_B: 1.52 #1.45
+        _E_B: 1.00 #1.45
         _update_odometry: false
         _dynamic_covariance: false
         _publish_odom_tf: false
-        _experimental_odom: true
+        _experimental_odom: false
         _dist_ratio: 0.9
         _yaw_ratio: 0.6
 
@@ -37,7 +37,7 @@
         angle_min: -2.60
         publish_intensity: false
         publish_multiecho: false
-        calibrate_time: true
+        calibrate_time: false
         default_user_latency: 0.0
         diagnostics_tolerance: 0.05
         diagnostics_window_time: 5.0

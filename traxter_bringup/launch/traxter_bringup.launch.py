@@ -70,7 +70,7 @@ def generate_launch_description():
           default_value='all',
           description='What sensors to launch. [all, perception, hokuyo, realsense, lowlevel]')
 
-     traxter_description_launch = IncludeLaunchDescription(
+    traxter_description_launch = IncludeLaunchDescription(
       PythonLaunchDescriptionSource([os.path.join(
          get_package_share_directory('traxter_description'), 'launch',
          'traxter_description.launch.py')])
@@ -137,12 +137,14 @@ def generate_launch_description():
             launch_arguments={
                 'sensorType': sensorType
             }.items()
+    )
 
     record_launch = IncludeLaunchDescription(
             [os.path.join(get_package_share_directory('traxter_bringup'), 'launch','recordRosBag.launch.xml')],
             launch_arguments={
                 'recordFile': recordFile
             }.items()
+    )
 
 
     return LaunchDescription([
@@ -155,82 +157,82 @@ def generate_launch_description():
         recordFile_arg,
         sensorType_arg,
         sensor_launch,
+        runType_launch,
+        navType_launch,
+        odometry_launch,
+        imu_launch,
+        robot_localization_launch,
+        kinematics_launch,
+        slamType_launch,
+        record_launch,
         RegisterEventHandler(
-            OnProcessStart(
+            OnExecutionComplete(
                 target_action=sensor_launch,
-                on_start=[
-                    LogInfo(msg='Launched Sensors.'),
-                    runType_launch
+                on_completion=[
+                    LogInfo(msg='Launched Sensors.')
                 ]
             )
         ),
         RegisterEventHandler(
-            OnProcessStart(
+            OnExecutionComplete(
                 target_action=runType_launch,
-                on_start=[
-                    LogInfo(msg='Launched Robot Description.'),
-                    navType_launch
+                on_completion=[
+                    LogInfo(msg='Launched Robot Description.')
                 ]
             )
         ),
         RegisterEventHandler(
-            OnProcessStart(
+            OnExecutionComplete(
                 target_action=navType_launch,
-                on_start=[
-                    LogInfo(msg='Launched PS3 Controller Interpreter.'),
-                    odometry_launch
+                on_completion=[
+                    LogInfo(msg='Launched PS3 Controller Interpreter.')
                 ]
             )
         ),
         RegisterEventHandler(
-            OnProcessStart(
+            OnExecutionComplete(
                 target_action=odometry_launch,
-                on_start=[
-                    LogInfo(msg='Launched Odometry.'),
-                    imu_launch
+                on_completion=[
+                    LogInfo(msg='Launched Odometry.')
                 ]
             )
         ),
         RegisterEventHandler(
-            OnProcessStart(
+            OnExecutionComplete(
                 target_action=imu_launch,
-                on_start=[
-                    LogInfo(msg='IMU interpretation.'),
-                    kinematics_launch
+                on_completion=[
+                    LogInfo(msg='IMU interpretation.')
                 ]
             )
         ),
         RegisterEventHandler(
-            OnProcessStart(
+            OnExecutionComplete(
                 target_action=kinematics_launch,
-                on_start=[
-                    LogInfo(msg='Launched Speed-Command to Wheel-Speeds node.'),
-                    robot_localization_launch
+                on_completion=[
+                    LogInfo(msg='Launched Speed-Command to Wheel-Speeds node.')
                 ]
             )
         ),
         RegisterEventHandler(
-            OnProcessStart(
+            OnExecutionComplete(
                 target_action=robot_localization_launch,
-                on_start=[
-                    LogInfo(msg='Launched EKF node.'),
-                    slamType_launch
+                on_completion=[
+                    LogInfo(msg='Launched EKF node.')
                 ]
             )
         ),
         RegisterEventHandler(
-            OnProcessStart(
+            OnExecutionComplete(
                 target_action=robot_localization_launch,
-                on_start=[
-                    LogInfo(msg='Launched SLAM.'),
-                    record_launch
+                on_completion=[
+                    LogInfo(msg='Launched SLAM.')
                 ]
             )
         ),
         RegisterEventHandler(
-            OnProcessStart(
+            OnExecutionComplete(
                 target_action=record_launch,
-                on_start=[
+                on_completion=[
                     LogInfo(msg='Started recording.')
                 ]
             )

@@ -109,21 +109,21 @@ private:
 
     if(msg->gyro_status<3){
       uncalibGyro++;
-      if(uncalibGyro>100){
+      if(uncalibGyro>1000){
         RCLCPP_WARN(this->get_logger(), "Gyroscope not fully calibrated! Level: %d/3",msg->gyro_status);
         uncalibGyro=0;
       }
     }
     if(msg->acc_status<3){
       uncalibAccel++;
-      if(uncalibAccel>100){
+      if(uncalibAccel>1000){
         RCLCPP_WARN(this->get_logger(), "Accelerometer not fully calibrated! Level: %d/3",msg->acc_status);
         uncalibAccel=0;
       }    
     }
     if(msg->mag_status<3){
       uncalibMag++;
-      if(uncalibMag>100){
+      if(uncalibMag>1000){
         RCLCPP_WARN(this->get_logger(), "Magnetometer not fully calibrated! Level: %d/3",msg->mag_status);
         uncalibMag=0;
       }    

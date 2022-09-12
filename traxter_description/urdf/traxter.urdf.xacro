@@ -24,6 +24,12 @@
 <!-- INCLUDES-->
     <xacro:include filename="colours.xacro" /> <!-- rviz colours-->
     <xacro:include filename="inertial_macros.xacro" /> <!-- basic inertia math-->
+    <xacro:include filename="$(find traxter_description)/urdf/_d435.urdf.xacro" />
+  
+  <!-- FOR REALSENSE DESCRIPTION -->
+  <xacro:arg name="use_nominal_extrinsics" default="true"/>
+  <xacro:arg name="add_plug" default="false" />
+  <xacro:arg name="use_mesh" default="true" />
 
 <!-- LINKS and JOINTS -->
 
@@ -276,38 +282,18 @@
     </link>   
 
     <!-- D435 Intel RealSense -->
-    <joint name="camera_joint" type="fixed">
+    <joint name="d435_joint" type="fixed">
         <parent link="camera_support"/>
-        <child link="camera_link"/>
+        <child link="d435_link"/>
         <origin xyz="0.015 0 ${camera_height* 0.5}" rpy="0 0 0"/>
     </joint>
-    <link name="camera_link">
-        <inertial>
-            <mass value="0.0615752"/>
-            <origin xyz="0 0 0" rpy="0 0 0"/>
-            <inertia ixx="9.108e-05" ixy="0" ixz="0"
-                    iyy="2.51e-06" iyz="0"
-                    izz="8.931e-05"/>
-          </inertial>
-        <visual>
-        <origin xyz="0 0 0" rpy="0 0 ${PI/2} "/>
-            <geometry>
-                <mesh filename="package://traxter_description/meshes/realsense.dae" scale="1 1 1"/> <!-- taken form https://github.com/IntelRealSense/realsense-ros/blob/development/realsense2_description/meshes/d435.dae -->
-            </geometry>
-        </visual>
-        <collision name="cam_base_c">
-            <origin xyz="0 0 -0.0125" rpy="0 0 0"/>
-            <geometry>
-                <cylinder radius="0.007" length="0.005"/>
-            </geometry>
-        </collision>
-        <collision name="cam_top_c">
-            <origin xyz="0 0 0" rpy="${PI* 0.5} 0 0"/>
-            <geometry>
-                <cylinder radius="0.01" length="0.05"/>
-            </geometry>
-        </collision>
+
+    <link name="d435_link">
     </link>
+
+    <xacro:sensor_d435 parent="d435_link" use_nominal_extrinsics="$(arg use_nominal_extrinsics)" add_plug="$(arg add_plug)" use_mesh="$(arg use_mesh)">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:sensor_d435>
 
     <!-- HOKUYO LIDAR -->
     <joint name="lidar_joint" type="fixed">
@@ -353,7 +339,7 @@
         <link name="imu_link"></link>
 
         <!-- Depth Camera -->
-    <gazebo reference="camera_link"> <!-- values taken from https://fuel.gazebosim.org/1.0/OpenRobotics/models/Intel RealSense D435 -->
+    <gazebo reference="d435_link"> <!-- values taken from https://fuel.gazebosim.org/1.0/OpenRobotics/models/Intel RealSense D435 -->
         <sensor name="rgbd_camera" type="rgbd_camera">
         <pose>0.02 0 0 0 0 0</pose>
             <always_on>1</always_on>

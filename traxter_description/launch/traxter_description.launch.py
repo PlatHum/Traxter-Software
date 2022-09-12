@@ -20,6 +20,7 @@ def generate_launch_description():
     #print("Fetching URDF")
     robot_desc_path = os.path.join(get_package_share_directory(package_description), "urdf", urdf_file)
 
+
     # Robot State Publisher
 
     robot_state_publisher_node = Node(
@@ -38,6 +39,6 @@ def generate_launch_description():
             'simTime',
             default_value='False',
             description='Wheter to se simulation time or not on robot description.'),           
-            robot_state_publisher_node,
+            robot_state_publisher_node
         ]
     )
