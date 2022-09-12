@@ -13,14 +13,20 @@
         _alpha_L: 1.0
         _k_R: 0.0005
         _k_L: 0.0005
-        _E_D: 1.00 #1.0015
-        _E_B: 1.00 #1.45
+        _E_D: 1.00
+        _E_B: 1.52 #1.45
         _update_odometry: false
         _dynamic_covariance: false
+        _publish_odom_tf: false
+        _experimental_odom: true
+        _dist_ratio: 0.9
+        _yaw_ratio: 0.6
+
+        _limit_covariance: "[[0.0081,0.0,0.0],[0.0,0.008100005,0.0],[0.0,0.0,0.050]]"
 #For IMU
         _orientation_covariance: "[[0.0, 0.0,  0.0], [0.0, 0.0,  0.0], [0.0, 0.0,  0.0001826]]"
-        _angular_velocity_covariance: "[[2.439e-05, 5.169e-07,  -2.577e-07], [5.169e-07, 6.305e-06,  -2.786e-07], [-2.577e-07, -2.786e-07,  2.267e-05]]"
-        _linear_acceleration_covariance: "[[0.0001661, -9.742e-06,  -2.256e-05], [-9.742e-06, 0.0001219,  2.224e-05], [-2.256e-05, 2.224e-05,  0.0004139]]"
+        _angular_velocity_covariance: "[[2.439e-04, 0.0,  0.0], [0.0, 6.305e-05,  0.0], [0.0, -2.786e-06,  0.0]]"
+        _linear_acceleration_covariance: "[[0.001661, 0.0 ,  0.0], [0.0, 0.001219,  0.0], [0.0, 0.0,  0.004139]]"
 #For Hokuyo LiDAR:
         ip_address: ""
         #ip_port: 10940

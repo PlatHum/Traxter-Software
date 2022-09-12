@@ -3,9 +3,11 @@
 #include <traxter_msgs/msg/dual_motor_array.hpp>
 #include "nav_msgs/msg/odometry.hpp"
 #include <tf2/LinearMath/Quaternion.h>
+#include <tf2_ros/transform_broadcaster.h>
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <nav_msgs/msg/path.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <math.h>
 #include <cstdio>  // for EOF
 #include <string>
@@ -39,6 +41,10 @@ public:
     this->declare_parameter("_update_odometry", false);
     this->declare_parameter("_limit_covariance", "[[0.0017, 0.00259,  0.00507], [0.00259, 0.0041,  0.0078], [0.00507, 0.0078,  0.018]]");
     this->declare_parameter("_dynamic_covariance", false);
+    this->declare_parameter("_publish_odom_tf", false);
+    this->declare_parameter("_experimental_odom", false);
+    this->declare_parameter("_dist_ratio", 1.0);
+    this->declare_parameter("_yaw_ratio", 1.0);
     rclcpp::QoS qos(3);
     qos.keep_last(3);
     qos.best_effort();
@@ -59,7 +65,11 @@ public:
     this->get_parameter("_E_B", E_B);
     this->get_parameter("_update_odometry", UPDATE_ODOM);
     this->get_parameter("_limit_covariance", LIMIT_COVARIANCE);
-    this->get_parameter("_dynamic_covariance", DYNAMIC_COVARIANCE);  
+    this->get_parameter("_dynamic_covariance", DYNAMIC_COVARIANCE);
+    this->get_parameter("_publish_odom_tf", PUBLISH_TF);
+    this->get_parameter("_experimental_odom", EXPERIMENTAL_ODOM);
+    this->get_parameter("_dist_ratio", DIST_RATIO);
+    this->get_parameter("_yaw_ratio", YAW_RATIO);     
 
     switch (RUN_TYPE)
     {
@@ -93,9 +103,16 @@ public:
           "odom", 1, std::bind(&odometryPublisher::update_odom_callback, this, _1));
     }
     
-
-    odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("traxter/odometry/raw",1);
     odom_path_publisher_=this->create_publisher<nav_msgs::msg::Path>("traxter/path/odometry/raw",1);
+
+    if(PUBLISH_TF){
+        // Initialize the transform broadcaster
+      tf_broadcaster_ =
+        std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+        odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("odom",1);
+    }else{
+        odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("traxter/odometry/raw",1);
+    }
 
     setup_variables();
   };
@@ -148,7 +165,7 @@ private:
         for (size_t j = 0; j <= i; j++)
         {
           newOdom.pose.covariance[mapCov[i][j]]= limit_covariance[i][j];
-          newOdom.twist.covariance[mapCov[i][j]]=1.3*limit_covariance[i][j];
+          newOdom.twist.covariance[mapCov[i][j]]=1.05*limit_covariance[i][j];
           if (i!=j){
             newOdom.pose.covariance[mapCov[j][i]]=newOdom.pose.covariance[mapCov[i][j]];
             newOdom.twist.covariance[mapCov[j][i]]= newOdom.twist.covariance[mapCov[i][j]];
@@ -261,6 +278,9 @@ private:
 
     if (timeToPublish){
       odom_publisher_->publish(newOdom);
+      if(PUBLISH_TF){
+         publish_transform();
+      }
     }
 
     updateOdomPath();
@@ -319,8 +339,16 @@ private:
     //local displacement in this time step
     double deltaS = (deltaS_R+deltaS_L)/2;
 
+    if(DIST_RATIO){
+      deltaS=DIST_RATIO*deltaS;
+    }
+
     //local displacement in this time step (it should be asin of this, but assuming small angular displacement)
     double deltaTheta = (deltaS_R-deltaS_L)/(E_B * WHEEL_BASE);
+
+    if(DIST_RATIO){
+      deltaTheta=YAW_RATIO*deltaTheta;
+    }
 
     double tempAngle = oldYawEuler + deltaTheta/2;
 
@@ -482,6 +510,33 @@ private:
     
   };
 
+  void publish_transform(){
+    geometry_msgs::msg::TransformStamped t;
+
+    // Read message content and assign it to
+    // corresponding tf variables
+    t.header= newOdom.header;
+    t.header.stamp=this->get_clock()->now();
+    t.child_frame_id = "base_link";
+
+    // Turtle only exists in 2D, thus we get x and y translation
+    // coordinates from the message and set the z coordinate to 0
+    t.transform.translation.x = newOdom.pose.pose.position.x;
+    t.transform.translation.y = newOdom.pose.pose.position.y;
+    t.transform.translation.z = 0.0;
+
+    // For the same reason, turtle can only rotate around one axis
+    // and this why we set rotation in x and y to 0 and obtain
+    // rotation in z axis from the message
+    t.transform.rotation.x = newOdom.pose.pose.orientation.x;
+    t.transform.rotation.y = newOdom.pose.pose.orientation.y;
+    t.transform.rotation.z = newOdom.pose.pose.orientation.z;
+    t.transform.rotation.w = newOdom.pose.pose.orientation.w;
+
+    // Send the transformation
+    tf_broadcaster_->sendTransform(t);
+  }
+
   std::vector<std::vector<double>> parseVVF(const std::string & input, std::string & error_return)
   {
     std::vector<std::vector<double>> result;
@@ -609,11 +664,17 @@ private:
   double ALPHA_L;
   bool UPDATE_ODOM;
   bool DYNAMIC_COVARIANCE;
+  bool PUBLISH_TF;
+  bool EXPERIMENTAL_ODOM;
+  double YAW_RATIO;
+  double DIST_RATIO;
   std::string LIMIT_COVARIANCE;
 
   //time instances because rclcpp is a mess with time and header stamps
   rclcpp::Time oldTime;
   rclcpp::Time newTime;
+
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
 };
 

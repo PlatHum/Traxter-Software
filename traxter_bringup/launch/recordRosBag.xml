@@ -1,3 +1,0 @@
-<launch>
-  <executable cmd="ros2 bag record /cmd_vel /joy /traxter/encoder/ticks /traxter/imu/data/unprocessed /traxter/motor/command /joy/set_feedback -o square_floor_1" output="screen" />
-</launch>

@@ -1,0 +1,7 @@
+<launch>
+
+  <arg name="recordFile" default= "none" />
+    <group unless="$(eval '\'$(var sensorType)\' == \'none\'')">
+      <executable cmd="ros2 bag record /cmd_vel /joy /traxter/encoder/ticks /traxter/imu/data/unprocessed /traxter/motor/command /joy/set_feedback -o $(var recordFile)" output="screen" />   
+    </group>
+</launch>

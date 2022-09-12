@@ -4,9 +4,9 @@
     <arg name="runType" default="realHard" />
 
     <group if="$(eval '\'$(var slamType)\' == \'carto\'')">
-        <include file="$(find-pkg-share traxter_bringup)/launch/sensors.launch.xml">
+<!--         <include file="$(find-pkg-share traxter_bringup)/launch/sensors.launch.xml">
             <arg name="hokuyo" value= 'true'/>
-        </include>
+        </include> -->
         <include file="$(find-pkg-share traxter_cartographer_slam)/launch/cartographer.launch.py">            
         <arg name="use_sim_time" value= 'False'/>
         <arg name="slam_params_file" value= 'realCartographer.lua'/>
@@ -15,11 +15,11 @@
 
     <group if="$(eval '\'$(var slamType)\' == \'tools\'')">
 
-        <include file="$(find-pkg-share traxter_bringup)/launch/sensors.launch.xml">
+<!--         <include file="$(find-pkg-share traxter_bringup)/launch/sensors.launch.xml">
             <arg name="hokuyo" value= 'true'/>
-        </include> 
+        </include>  -->
         <include file="$(find-pkg-share traxter_slam_toolbox)/launch/slam_toolbox.launch.py">
-        <arg name="use_sim_time" value= 'False'/>
+        <arg name="use_sim_time" value= 'false'/>
         <arg name="slam_params_file" value= 'realAsync.yaml'/>
         </include>        
     </group>

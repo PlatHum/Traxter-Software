@@ -22,10 +22,14 @@ def generate_launch_description():
 
     world = LaunchConfiguration('world')
     runType = LaunchConfiguration('runType')
+    sensorType= LaunchConfiguration('sensorType')
     navType = LaunchConfiguration('navType')
     slamType = LaunchConfiguration('slamType')
     odomType = LaunchConfiguration('odomType')
     configFile = LaunchConfiguration('configFile')
+    recordFile = LaunchConfiguration('recordFile')
+
+
     runType_arg = DeclareLaunchArgument(
           'runType',
           default_value="realHard",
@@ -56,11 +60,21 @@ def generate_launch_description():
           default_value='default',
           description='What config parameter file to load from config directory of bringup.')
 
-    #traxter_description_launch = IncludeLaunchDescription(
-     # PythonLaunchDescriptionSource([os.path.join(
-      #   get_package_share_directory('traxter_description'), 'launch',
-       #  'traxter_description.launch.py')])
-      #)
+    recordFile_arg = DeclareLaunchArgument(
+          'recordFile',
+          default_value='none',
+          description='What to name the rosbag file. [none, #wanted_name#]')
+
+    sensorType_arg = DeclareLaunchArgument(
+          'sensorType',
+          default_value='all',
+          description='What sensors to launch. [all, perception, hokuyo, realsense, lowlevel]')
+
+     traxter_description_launch = IncludeLaunchDescription(
+      PythonLaunchDescriptionSource([os.path.join(
+         get_package_share_directory('traxter_description'), 'launch',
+         'traxter_description.launch.py')])
+      ) 
 
     runType_launch = IncludeLaunchDescription(
             [os.path.join(get_package_share_directory('traxter_bringup'), 'launch','runType.launch.xml')],
@@ -118,6 +132,18 @@ def generate_launch_description():
             }.items()
         )
 
+    sensor_launch = IncludeLaunchDescription(
+            [os.path.join(get_package_share_directory('traxter_bringup'), 'launch','sensors.launch.xml')],
+            launch_arguments={
+                'sensorType': sensorType
+            }.items()
+
+    record_launch = IncludeLaunchDescription(
+            [os.path.join(get_package_share_directory('traxter_bringup'), 'launch','recordRosBag.launch.xml')],
+            launch_arguments={
+                'recordFile': recordFile
+            }.items()
+
 
     return LaunchDescription([
         world_arg,
@@ -126,13 +152,89 @@ def generate_launch_description():
         slamType_arg,
         odomType_arg,
         configFile_arg,
-        runType_launch,
-        navType_launch,
-        slamType_launch,
-        odometry_launch,
-        imu_launch,
-        kinematics_launch,
-        robot_localization_launch
+        recordFile_arg,
+        sensorType_arg,
+        sensor_launch,
+        RegisterEventHandler(
+            OnProcessStart(
+                target_action=sensor_launch,
+                on_start=[
+                    LogInfo(msg='Launched Sensors.'),
+                    runType_launch
+                ]
+            )
+        ),
+        RegisterEventHandler(
+            OnProcessStart(
+                target_action=runType_launch,
+                on_start=[
+                    LogInfo(msg='Launched Robot Description.'),
+                    navType_launch
+                ]
+            )
+        ),
+        RegisterEventHandler(
+            OnProcessStart(
+                target_action=navType_launch,
+                on_start=[
+                    LogInfo(msg='Launched PS3 Controller Interpreter.'),
+                    odometry_launch
+                ]
+            )
+        ),
+        RegisterEventHandler(
+            OnProcessStart(
+                target_action=odometry_launch,
+                on_start=[
+                    LogInfo(msg='Launched Odometry.'),
+                    imu_launch
+                ]
+            )
+        ),
+        RegisterEventHandler(
+            OnProcessStart(
+                target_action=imu_launch,
+                on_start=[
+                    LogInfo(msg='IMU interpretation.'),
+                    kinematics_launch
+                ]
+            )
+        ),
+        RegisterEventHandler(
+            OnProcessStart(
+                target_action=kinematics_launch,
+                on_start=[
+                    LogInfo(msg='Launched Speed-Command to Wheel-Speeds node.'),
+                    robot_localization_launch
+                ]
+            )
+        ),
+        RegisterEventHandler(
+            OnProcessStart(
+                target_action=robot_localization_launch,
+                on_start=[
+                    LogInfo(msg='Launched EKF node.'),
+                    slamType_launch
+                ]
+            )
+        ),
+        RegisterEventHandler(
+            OnProcessStart(
+                target_action=robot_localization_launch,
+                on_start=[
+                    LogInfo(msg='Launched SLAM.'),
+                    record_launch
+                ]
+            )
+        ),
+        RegisterEventHandler(
+            OnProcessStart(
+                target_action=record_launch,
+                on_start=[
+                    LogInfo(msg='Started recording.')
+                ]
+            )
+        )
 
     ])
 
