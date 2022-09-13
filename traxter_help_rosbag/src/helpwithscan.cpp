@@ -28,7 +28,7 @@ private:
 
 void scan_topic_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg){
 
-    msg->header.stamp= this->get_clock()->now();;
+    msg->header.stamp= this->get_clock()->now();
 
     publisher_->publish(*msg);
 }

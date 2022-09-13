@@ -162,8 +162,8 @@ def generate_launch_description():
         navType_launch,
         odometry_launch,
         imu_launch,
-        robot_localization_launch,
         kinematics_launch,
+        robot_localization_launch,
         slamType_launch,
         record_launch,
         RegisterEventHandler(
@@ -224,7 +224,7 @@ def generate_launch_description():
         ),
         RegisterEventHandler(
             OnExecutionComplete(
-                target_action=robot_localization_launch,
+                target_action=slamType_launch,
                 on_completion=[
                     LogInfo(msg='Launched SLAM.')
                 ]

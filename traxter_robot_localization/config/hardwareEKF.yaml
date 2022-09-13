@@ -61,7 +61,7 @@ ekf_filter_node:
         imu0_twist_rejection_threshold: 6.28                #
         imu0_linear_acceleration_rejection_threshold: 10.0  #
 
-        imu0_remove_gravitational_acceleration: false
+        imu0_remove_gravitational_acceleration: true
 
         process_noise_covariance: [0.05, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
                                    0.0,    0.05, 0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,

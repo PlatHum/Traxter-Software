@@ -18,7 +18,7 @@
         _update_odometry: false
         _dynamic_covariance: false
         _publish_odom_tf: false
-        _experimental_odom: true
+        _experimental_odom: false
         _dist_ratio: 0.9
         _yaw_ratio: 0.6
 
@@ -38,11 +38,11 @@
         publish_intensity: false
         publish_multiecho: false
         calibrate_time: false
-        default_user_latency: 0.052
+        default_user_latency: 0.0
         diagnostics_tolerance: 0.05
         diagnostics_window_time: 5.0
         error_limit: 4
         get_detailed_status: false
-        cluster: 2
+        cluster: 1
         skip: 0 
 

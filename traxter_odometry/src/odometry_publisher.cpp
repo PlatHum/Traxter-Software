@@ -201,8 +201,8 @@ private:
     deltaEncoderTicks();
     newTime = this->now();
     newOdom.header.stamp = newTime;
-    runAlgorithm();
     publishJointState();
+    runAlgorithm();
   };
 
   void simulation_topic_callback(const sensor_msgs::msg::JointState::SharedPtr msg)
@@ -403,7 +403,7 @@ private:
 
     traxter_joints.position.clear();
     traxter_joints.position={left_side_position,right_side_position,left_side_position,right_side_position};
-    traxter_joints.header.stamp=this->now();
+    traxter_joints.header.stamp=newOdom.header.stamp;
     joint_state_publisher_->publish(traxter_joints); 
 
   };
