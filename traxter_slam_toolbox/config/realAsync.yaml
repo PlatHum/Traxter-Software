@@ -50,15 +50,15 @@ slam_toolbox:
     #Number of scans to throttle in synchronous mode
     throttle_scans: 5
     #The map to odom transform publish period. 0 will not publish transforms
-    transform_publish_period: 1.0
+    transform_publish_period: 0.08
     #Interval to update the 2D occupancy map for other applications / visualization
-    map_update_interval: 1.0
+    map_update_interval: 0.1
     #Resolution of the 2D occupancy map to generate
-    resolution: 0.01
+    resolution: 0.03
     #Maximum laser range to use for 2D occupancy map rastering
     max_laser_range: 3.0
     #The minimum duration of time between scans to be processed in synchronous mode
-    minimum_time_interval: 0.005
+    minimum_time_interval: 0.001
     #TF timeout for looking up transforms
     transform_timeout: 0.8
     #Duration to store TF messages for lookup. Set high if running offline at multiple times speed in synchronous mode.
