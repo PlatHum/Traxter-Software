@@ -25,5 +25,9 @@
         <executable cmd="ros2 bag record /cmd_vel /joy /traxter/encoder/ticks /traxter/imu/data/unprocessed /traxter/motor/command  /imu /joint_states /odom /robot_description /tf /tf_static /traxter/odometry/raw -o $(var recordFile)" output="screen" /> 
       </group>
 
+      <group if="$(eval '\'$(var slamType)\' == \'offline\'')">
+        <executable cmd="ros2 bag record /cmd_vel /joy /traxter/encoder/ticks /traxter/imu/data/unprocessed /traxter/motor/command /imu /joint_states /odom /robot_description /tf /tf_static /traxter/odometry/raw /scan /laser_status /depth/image /rgb/camera_info /rgb/image -o $(var recordFile)" output="screen" /> 
+      </group>
+
     </group>
 </launch>
