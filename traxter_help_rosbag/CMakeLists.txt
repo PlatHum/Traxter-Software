@@ -11,6 +11,8 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(traxter_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -25,11 +27,14 @@ if(BUILD_TESTING)
 endif()
 
 add_executable(helpwithscan src/helpwithscan.cpp)
+add_executable(helpwithwheelspeed src/helpwithwheelspeed.cpp)
 
 ament_target_dependencies(helpwithscan rclcpp sensor_msgs tf2 tf2_ros)
+ament_target_dependencies(helpwithwheelspeed rclcpp geometry_msgs tf2 tf2_ros traxter_msgs)
 
 install(TARGETS
    helpwithscan
+   helpwithwheelspeed
    DESTINATION lib/${PROJECT_NAME}
  )
 

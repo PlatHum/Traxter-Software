@@ -20,7 +20,7 @@ public:
   imuInterpreter()
   : Node("imu_interpreter")
   {
-
+    this->declare_parameter("_initial_theta", 0.000001);
     this->declare_parameter("_run_type", 2);//0 full simulation, 1 hardware in the loop, 2 real hardware
     this->declare_parameter("_orientation_covariance", "[[0.0, 0.0,  0.0], [0.0, 0.0,  0.0], [0.0, 0.0,  0.0001826]]");
     this->declare_parameter("_angular_velocity_covariance", "[[2.439e-05, 5.169e-07,  -2.577e-07], [5.169e-07, 6.305e-06,  -2.786e-07], [-2.577e-07, -2.786e-07,  2.267e-05]]");
@@ -37,6 +37,7 @@ public:
     this->get_parameter("_orientation_covariance", ORIENTATION_COVARIANCE);
     this->get_parameter("_angular_velocity_covariance", ANGULAR_VELOCITY_COVARIANCE);
     this->get_parameter("_linear_acceleration_covariance", LINEAR_ACCELERATION_COVARIANCE);
+    this->get_parameter("_initial_theta", INITIAL_THETA);
 
     switch (RUN_TYPE)
     {
@@ -82,6 +83,9 @@ public:
         }
       }
     }
+
+    prev_q.setRPY(0, 0, INITIAL_THETA);
+    prev_q.normalize();
   }
 
 private:
@@ -89,13 +93,22 @@ private:
   void hardware_topic_callback(const traxter_msgs::msg::LightImu::SharedPtr msg)
   {
 
-    tf2::Quaternion q((msg->q1)/100.0,(msg->q2)/100.0,(msg->q3)/100.0,(msg->q0)/100.0);
-    q.normalize();
+    if (isFirst){
+      tf2::Quaternion inv_q((msg->q1)/100.0,(msg->q2)/100.0,(msg->q3)/100.0,-(msg->q0)/100.0);//notice the minus
+      offset_q=QuaternionRotation(prev_q, inv_q);
+      isFirst=false;
+    }
 
-    standard_imu_message.orientation.x= q.x();
-    standard_imu_message.orientation.y= q.y();
-    standard_imu_message.orientation.z= q.z();
-    standard_imu_message.orientation.w= q.w();
+    tf2::Quaternion q((msg->q1)/100.0,(msg->q2)/100.0,(msg->q3)/100.0,(msg->q0)/100.0);
+    tf2::Quaternion rotated_q = QuaternionRotation(q, offset_q);
+
+/*     tf2::Quaternion q((msg->q1)/100.0,(msg->q2)/100.0,(msg->q3)/100.0,(msg->q0)/100.0);
+    q.normalize(); */
+
+    standard_imu_message.orientation.x= rotated_q.x();
+    standard_imu_message.orientation.y= rotated_q.y();
+    standard_imu_message.orientation.z= rotated_q.z();
+    standard_imu_message.orientation.w= rotated_q.w();
 
     standard_imu_message.angular_velocity.x=msg->gyrox/100.0;
     standard_imu_message.angular_velocity.y=msg->gyroy/100.0;
@@ -133,7 +146,9 @@ private:
 
         RCLCPP_FATAL(this->get_logger(), "IMU NOT CONNECTED PROPERLY!");
 
-      }    
+      } 
+
+    prev_q=q;   
   }
 
 
@@ -250,6 +265,13 @@ void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
     return result;
   };
 
+  tf2::Quaternion QuaternionRotation(tf2::Quaternion q_rot, tf2::Quaternion q_org){ //from q_org to q_new
+
+    tf2::Quaternion q_new = q_rot * q_org;
+    q_new.normalize();
+    return q_new;
+  };
+
   rclcpp::Subscription<traxter_msgs::msg::LightImu>::SharedPtr hardware_subscription_;
   rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr simul_subscription_;
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr publisher_;
@@ -274,6 +296,9 @@ void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
   uint uncalibGyro=0;
   uint uncalibMag=0;
   uint uncalibAccel=0;
+  tf2::Quaternion offset_q;
+  tf2::Quaternion prev_q;
+  float INITIAL_THETA;
 };
 
 int main(int argc, char * argv[])

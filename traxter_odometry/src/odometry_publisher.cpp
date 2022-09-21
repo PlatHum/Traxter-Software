@@ -31,7 +31,7 @@ public:
     this->declare_parameter("_ticks_per_wheel_rev", 360);
     this->declare_parameter("_initial_x", 0.0);
     this->declare_parameter("_initial_y", 0.0);
-    this->declare_parameter("_initial_theta", 0.00000000001);
+    this->declare_parameter("_initial_theta", 0.000000001);
     this->declare_parameter("_alpha_L", 1.0);
     this->declare_parameter("_alpha_R", 1.0);
     this->declare_parameter("_k_R", 0.1);
@@ -371,8 +371,9 @@ private:
 
       //estimate velocity
       double deltaT=(newTime.nanoseconds() - oldTime.nanoseconds())*1e-9;
-      if(deltaT>0.001){//avoid weird time behaviour in simulation
+      if(deltaT>0.0001){//avoid weird time behaviour in simulation
         newOdom.twist.twist.linear.x = deltaS/deltaT;
+        newOdom.twist.twist.linear.y = 0.0;
         newOdom.twist.twist.angular.z = deltaTheta/deltaT;
       }
 
@@ -516,7 +517,7 @@ private:
     // Read message content and assign it to
     // corresponding tf variables
     t.header= newOdom.header;
-    t.header.stamp=this->get_clock()->now();
+    t.header.stamp=this->now();
     t.child_frame_id = "base_link";
 
     // Turtle only exists in 2D, thus we get x and y translation
