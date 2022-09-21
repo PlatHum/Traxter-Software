@@ -22,9 +22,9 @@ public:
   {
     this->declare_parameter("_initial_theta", 0.000001);
     this->declare_parameter("_run_type", 2);//0 full simulation, 1 hardware in the loop, 2 real hardware
-    this->declare_parameter("_orientation_covariance", "[[0.0, 0.0,  0.0], [0.0, 0.0,  0.0], [0.0, 0.0,  0.0001826]]");
-    this->declare_parameter("_angular_velocity_covariance", "[[2.439e-05, 5.169e-07,  -2.577e-07], [5.169e-07, 6.305e-06,  -2.786e-07], [-2.577e-07, -2.786e-07,  2.267e-05]]");
-    this->declare_parameter("_linear_acceleration_covariance", "[[0.0001661, -9.742e-06,  -2.256e-05], [-9.742e-06, 0.0001219,  2.224e-05], [-2.256e-05, 2.224e-05,  0.0004139]]");
+    this->declare_parameter("_orientation_covariance", "[[1.63e-08, 1.99e-09,  1.533e-06], [1.99e-09, 3.435e-09,  3.311e-07], [1.533e-06, 3.311e-07,  0.0001507]]");
+    this->declare_parameter("_angular_velocity_covariance", "[[0.0001552, 8.187e-05,  -2.553e-07], [8.187e-05, 0.000146,  -6.395e-08], [-2.553e-07, -6.395e-08,  7.454e-08]]");
+    this->declare_parameter("_linear_acceleration_covariance", "[[0.01916, 0.004119,  0.006678], [0.004119, 0.01971,  0.02182], [0.006678, 0.02182,  0.09099]]");
 
 
     rclcpp::QoS qos(3);
