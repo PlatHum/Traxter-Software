@@ -118,6 +118,17 @@ private:
     standard_imu_message.linear_acceleration.z=msg->accz/100.0;
     standard_imu_message.header.stamp=this->now();
 
+    if(msg->mag_status<3){
+      if(uncalibMag<0){
+        standard_imu_message.orientation_covariance[mapCov[2][2]]*=4.0; 
+      }
+      uncalibMag+=1;
+      if(uncalibMag>1000){
+        RCLCPP_WARN(this->get_logger(), "Magnetometer not fully calibrated! Level: %d/3",msg->mag_status);
+        uncalibMag=0;
+      }   
+    }
+
     publisher_->publish(standard_imu_message);
 
     if(msg->gyro_status<3){
@@ -132,13 +143,6 @@ private:
       if(uncalibAccel>1000){
         RCLCPP_WARN(this->get_logger(), "Accelerometer not fully calibrated! Level: %d/3",msg->acc_status);
         uncalibAccel=0;
-      }    
-    }
-    if(msg->mag_status<3){
-      uncalibMag++;
-      if(uncalibMag>1000){
-        RCLCPP_WARN(this->get_logger(), "Magnetometer not fully calibrated! Level: %d/3",msg->mag_status);
-        uncalibMag=0;
       }    
     }
 
@@ -294,7 +298,7 @@ void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
   double prevYaw = 0;
   int cycles=0;
   uint uncalibGyro=0;
-  uint uncalibMag=0;
+  int uncalibMag=-1;
   uint uncalibAccel=0;
   tf2::Quaternion offset_q;
   tf2::Quaternion prev_q;
