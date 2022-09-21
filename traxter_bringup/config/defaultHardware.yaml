@@ -13,8 +13,8 @@
         _alpha_L: 1.0
         _k_R: 0.0005
         _k_L: 0.0005
-        _E_D: 1.00
-        _E_B: 1.00 #1.45
+        _E_D: 1.003855713758940
+        _E_B: 0.941756780812767 #1.45
         _update_odometry: false
         _dynamic_covariance: false
         _publish_odom_tf: false
