@@ -18,21 +18,24 @@ public:
   : Node("controller_feedback")
   {
 
-    this->declare_parameter("_controller_feedback_distance", 0.4);
-    this->declare_parameter("_controller_feedback_intensity", 0.4);
+    this->declare_parameter("_controller_feedback_distance", 0.2);
+    this->declare_parameter("_controller_feedback_intensity", 0.3);
     this->get_parameter("_controller_feedback_distance", MIN_DISTANCE);
     this->get_parameter("_controller_feedback_intensity", INTENSITY);
     if(INTENSITY>1.0){INTENSITY=1.0;}
     if(INTENSITY<0.0){INTENSITY=0.0;}
-    if(MIN_DISTANCE<0.35){MIN_DISTANCE=0.35;}
+    if(MIN_DISTANCE<0.20){MIN_DISTANCE=0.20;}
 
     RCLCPP_INFO(this->get_logger(), "Controller Feedback on %.1fm with %.1f intensity rumble.",MIN_DISTANCE,INTENSITY );
     
     publisher_ = this->create_publisher<sensor_msgs::msg::JoyFeedback>("joy/set_feedback", 1);
-    timer_ = this->create_wall_timer(100ms, std::bind(&ControllerFeedbackNode::timer_callback, this));
+    timer_ = this->create_wall_timer(80ms, std::bind(&ControllerFeedbackNode::timer_callback, this));
 
     scan_subscription_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
           "scan", 2, std::bind(&ControllerFeedbackNode::scan_topic_callback, this, _1));
+
+    msg_out.id=0;
+    msg_out.type=1;
 
 
     }
@@ -45,7 +48,7 @@ void scan_topic_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg){
 
     for (size_t i = 0; i < msg->ranges.size(); i++)
     {
-        if (msg->ranges[i]>=MIN_DISTANCE && msg->ranges[i]<=msg->range_max){
+        if (msg->ranges[i]<=MIN_DISTANCE && msg->ranges[i]<=msg->range_max && msg->ranges[i]>=msg->range_min){
             shouldRumble=true;
              RCLCPP_INFO(this->get_logger(), "Found point %.2fm away from robot",msg->ranges[i]);
             return;

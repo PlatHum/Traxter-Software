@@ -46,3 +46,7 @@
         cluster: 1
         skip: 0 
 
+#For controller feedback
+        _controller_feedback_intensity: 0.3
+        _controller_feedback_distance: 0.2
+
