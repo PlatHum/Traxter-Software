@@ -120,7 +120,9 @@ private:
 
     if(msg->mag_status<3){
       if(uncalibMag<0){
-        standard_imu_message.orientation_covariance[mapCov[2][2]]*=4.0; 
+        standard_imu_message.orientation_covariance[mapCov[2][2]]*=2.0;
+        standard_imu_message.orientation_covariance[mapCov[1][1]]*=2.0;
+        standard_imu_message.orientation_covariance[mapCov[0][0]]*=2.0;  
       }
       uncalibMag+=1;
       if(uncalibMag>1000){
