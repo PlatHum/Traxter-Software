@@ -119,7 +119,7 @@ private:
     standard_imu_message.header.stamp=this->now();
 
     if(msg->mag_status<3){
-      if(uncalibMag<0){
+      if(magCalLevel-msg->mag_status>0){
         standard_imu_message.orientation_covariance[mapCov[2][2]]*=2.0;
         standard_imu_message.orientation_covariance[mapCov[1][1]]*=2.0;
         standard_imu_message.orientation_covariance[mapCov[0][0]]*=2.0;  
@@ -154,7 +154,8 @@ private:
 
       } 
 
-    prev_q=q;   
+    prev_q=q;
+    magCalLevel=msg->mag_status;   
   }
 
 
@@ -300,8 +301,9 @@ void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
   double prevYaw = 0;
   int cycles=0;
   uint uncalibGyro=0;
-  int uncalibMag=-1;
+  uint uncalibMag=0;
   uint uncalibAccel=0;
+  uint magCalLevel=3;
   tf2::Quaternion offset_q;
   tf2::Quaternion prev_q;
   float INITIAL_THETA;
