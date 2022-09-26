@@ -63,7 +63,7 @@ public:
     this->get_parameter("_limit_covariance", LIMIT_COVARIANCE);
     this->get_parameter("_dynamic_covariance", DYNAMIC_COVARIANCE);
     this->get_parameter("_publish_odom_tf", PUBLISH_TF);
-    this->get_parameter("_publish_path", PUBLISH_PATH);
+    this->get_parameter("_publish_odom_path", PUBLISH_PATH);
   
 
     switch (RUN_TYPE)
