@@ -27,8 +27,8 @@ public:
     this->declare_parameter("_linear_acceleration_covariance", "[[0.01916, 0.004119,  0.006678], [0.004119, 0.01971,  0.02182], [0.006678, 0.02182,  0.09099]]");
 
 
-    rclcpp::QoS qos(3);
-    qos.keep_last(3);
+    rclcpp::QoS qos(1);
+    qos.keep_last(1);
     qos.best_effort();
     qos.durability_volatile();
 

@@ -36,7 +36,7 @@ public:
     this->declare_parameter("_k_L", 0.1);
     this->declare_parameter("_E_D", 1.0);
     this->declare_parameter("_E_B", 1.0);
-    this->declare_parameter("_publish_path", false);
+    this->declare_parameter("_publish_odom_path", false);
     /* this->declare_parameter("_update_odometry", false); */
     this->declare_parameter("_limit_covariance", "[[0.0017, 0.00259,  0.00507], [0.00259, 0.0041,  0.0078], [0.00507, 0.0078,  0.018]]");
     this->declare_parameter("_dynamic_covariance", false);
@@ -44,8 +44,8 @@ public:
 /*     this->declare_parameter("_experimental_odom", false);
     this->declare_parameter("_dist_ratio", 1.0);
     this->declare_parameter("_yaw_ratio", 1.0); */
-    rclcpp::QoS qos(5);
-    qos.keep_last(5);
+    rclcpp::QoS qos(1);
+    qos.keep_last(1);
     qos.best_effort();
     qos.durability_volatile();
 
@@ -93,7 +93,7 @@ public:
     }
 
     if (PUBLISH_PATH){
-      odom_path_publisher_=this->create_publisher<nav_msgs::msg::Path>("traxter/path/odometry/raw",3);
+      odom_path_publisher_=this->create_publisher<nav_msgs::msg::Path>("traxter/path/odometry/raw",1);
     }
 
     if(PUBLISH_TF){
@@ -335,8 +335,8 @@ private:
 
     //calculate new x, y, and theta
     double newYawEuler = deltaTheta + oldYawEuler;
-    newOdom.pose.pose.position.x = oldOdom.pose.pose.position.x + cos(deltaTheta)*deltaS;
-    newOdom.pose.pose.position.y = oldOdom.pose.pose.position.y + sin(deltaTheta)*deltaS;  
+    newOdom.pose.pose.position.x = oldOdom.pose.pose.position.x + cos(newYawEuler)*deltaS;
+    newOdom.pose.pose.position.y = oldOdom.pose.pose.position.y + sin(newYawEuler)*deltaS;  
 
     //prevent lockup from a single erroneous cycle
     if(!checkErroneousCycle(newYawEuler)){
