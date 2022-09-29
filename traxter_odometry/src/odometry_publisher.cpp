@@ -115,7 +115,6 @@ private:
     std::string ERROR;
     limit_covariance = parseVVF(LIMIT_COVARIANCE, ERROR);
 
-    effectiveWheelBase=WHEEL_BASE/E_B;
     newOdom.pose.pose.position.x = INITIAL_X;
     newOdom.pose.pose.position.y = INITIAL_Y;
     oldOdom.pose.pose.position.x = INITIAL_X;
@@ -148,8 +147,8 @@ private:
     pose_jacobian[2][1]=0.0;
     pose_jacobian[2][0]=0.0;
     pose_jacobian[2][2]=1.0;
-    motion_increment_jacobian[2][0]=1/effectiveWheelBase;
-    motion_increment_jacobian[2][1]=-1/effectiveWheelBase;
+    motion_increment_jacobian[2][0]=1/(E_B*WHEEL_BASE);
+    motion_increment_jacobian[2][1]=-1/(E_B*WHEEL_BASE);
     }else{
       for (size_t i = 0; i < 3; i++)
       {
@@ -324,17 +323,20 @@ private:
     double deltaS_R = (2*PI*WHEEL_RADIUS/(static_cast<float>(TICKSPERWHEELREV))) * (E_D*static_cast<float>(deltaRightTicks));
     double deltaS_L = (2*PI*WHEEL_RADIUS/(static_cast<float>(TICKSPERWHEELREV))) * (static_cast<float>(deltaLeftTicks));
 
-    //local displacement in this time step
-    double deltaS = (deltaS_R+deltaS_L)/2;
-
     //local displacement in this time step (it should be asin of this, but assuming small angular displacement)
     double deltaTheta = (deltaS_R-deltaS_L)/(E_B * WHEEL_BASE);
+    //local displacement in this time step
+    float deltaS = (deltaS_R+deltaS_L)/2;
 
-    //double tempAngle = oldYawEuler + deltaTheta/2;
+    deltaS/=1.0798;
+     if(deltaTheta>0){
+      deltaTheta=deltaTheta/1.0702;
+    }
+
 
 
     //calculate new x, y, and theta
-    double newYawEuler = deltaTheta + oldYawEuler;
+    float newYawEuler = deltaTheta + oldYawEuler;
     newOdom.pose.pose.position.x = oldOdom.pose.pose.position.x + cos(newYawEuler)*deltaS;
     newOdom.pose.pose.position.y = oldOdom.pose.pose.position.y + sin(newYawEuler)*deltaS;  
 
@@ -405,16 +407,16 @@ private:
     motion_increment_covar[1][1] = K_L*abs(delta_left);
     pose_jacobian[0][2] = -deltaS*sin(updateAngle);
     pose_jacobian[1][2] = deltaS*cos(updateAngle);
-    motion_increment_jacobian[0][0] = 0.5*cos(updateAngle) - deltaS/(2*effectiveWheelBase)*sin(updateAngle);
-    motion_increment_jacobian[0][1] = 0.5*cos(updateAngle) + deltaS/(2*effectiveWheelBase)*sin(updateAngle);
-    motion_increment_jacobian[1][0] = 0.5*sin(updateAngle) + deltaS/(2*effectiveWheelBase)*cos(updateAngle);
-    motion_increment_jacobian[1][1] = 0.5*sin(updateAngle) - deltaS/(2*effectiveWheelBase)*cos(updateAngle);
+    motion_increment_jacobian[0][0] = 0.5*cos(updateAngle) - deltaS/(2*E_B*WHEEL_BASE)*sin(updateAngle);
+    motion_increment_jacobian[0][1] = 0.5*cos(updateAngle) + deltaS/(2*E_B*WHEEL_BASE)*sin(updateAngle);
+    motion_increment_jacobian[1][0] = 0.5*sin(updateAngle) + deltaS/(2*E_B*WHEEL_BASE)*cos(updateAngle);
+    motion_increment_jacobian[1][1] = 0.5*sin(updateAngle) - deltaS/(2*E_B*WHEEL_BASE)*cos(updateAngle);
 
     for (size_t k = 0; k < 3; k++){
       for (size_t i = 0; i <= k; i++){ //covariance matrix is symetric
         
-        double tempA=0;
-        double tempB=0;
+        float tempA=0;
+        float tempB=0;
         
         for (size_t j = 0; j < 3; j++){
 
@@ -583,8 +585,6 @@ private:
   int deltaLeftTicks=0;
   int deltaRightTicks=0;
 
-  double effectiveWheelBase;
-
   double motion_increment_covar[2][2] = { {0.0, 0.0}, {0.0, 0.0}};
   double pose_jacobian[3][3] = { {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
   int mapCov[3][3] = { {0, 1, 5}, {6, 7, 11}, {30, 31, 35}};
@@ -607,14 +607,14 @@ private:
 
 //parameter holders
   int TICKSPERWHEELREV;
-  double WHEEL_RADIUS;
-  double WHEEL_BASE;
+  float WHEEL_RADIUS;
+  float WHEEL_BASE;
   int RUN_TYPE;
-  double INITIAL_X;
-  double INITIAL_Y;
+  float INITIAL_X;
+  float INITIAL_Y;
   double INITIAL_THETA;
-  double K_R;
-  double K_L;
+  float K_R;
+  float K_L;
   double E_D;
   double E_B;
   bool PUBLISH_PATH;
