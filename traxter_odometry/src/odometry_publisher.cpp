@@ -301,9 +301,6 @@ private:
     if(isnan(newOdom.pose.pose.position.x) || isnan(newOdom.pose.pose.position.y) || isnan(newYaw) ){
         return true;
     }
-    if(abs(newOdom.pose.pose.position.x-oldOdom.pose.pose.position.x)>2.0 || abs(newOdom.pose.pose.position.x-oldOdom.pose.pose.position.y)>2.0){
-      return true;
-    }
     return false;
 
  }
@@ -329,10 +326,9 @@ private:
     //local displacement in this time step (it should be asin of this, but assuming small angular displacement)
     double deltaTheta = (deltaS_R-deltaS_L)/(E_B * WHEEL_BASE);
     //local displacement in this time step
-    float deltaS = (deltaS_R+deltaS_L)/2;
-
-    deltaS/=1.0798;
-     if(deltaTheta>0){
+    float deltaS = (deltaS_R+deltaS_L)/(2.0*1.0798);
+    
+    if(deltaTheta>0){
       deltaTheta=deltaTheta/1.0702;
     }
 

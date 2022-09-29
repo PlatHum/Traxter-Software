@@ -11,12 +11,12 @@
         _initial_theta: 0.0
         _k_R: 0.0005
         _k_L: 0.0005
-        _E_D: 0.983557822890659
-        _E_B: 1.451546491146623 #1.535678331618855 #0.941756780812767 #1.45
+        _E_D: 0.98356
+        _E_B: 1.45155 #1.535678331618855 #0.941756780812767 #1.45
         _update_odometry: false
         _dynamic_covariance: false
         _publish_odom_tf: false
-        _publish_odom_path: true
+        _publish_odom_path: false
 
         _limit_covariance: "[[0.04,0.0,0.0],[0.0,0.09,0.0],[0.0,0.0,0.007615]]"
 #For IMU
