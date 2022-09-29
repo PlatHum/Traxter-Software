@@ -36,14 +36,12 @@ public:
     this->declare_parameter("_k_L", 0.1);
     this->declare_parameter("_E_D", 1.0);
     this->declare_parameter("_E_B", 1.0);
+    this->declare_parameter("_alpha_dist", 1.0);
+    this->declare_parameter("_alpha_yaw", 1.0);
     this->declare_parameter("_publish_odom_path", false);
-    /* this->declare_parameter("_update_odometry", false); */
     this->declare_parameter("_limit_covariance", "[[0.0017, 0.00259,  0.00507], [0.00259, 0.0041,  0.0078], [0.00507, 0.0078,  0.018]]");
     this->declare_parameter("_dynamic_covariance", false);
     this->declare_parameter("_publish_odom_tf", false);
-/*     this->declare_parameter("_experimental_odom", false);
-    this->declare_parameter("_dist_ratio", 1.0);
-    this->declare_parameter("_yaw_ratio", 1.0); */
     rclcpp::QoS qos(1);
     qos.keep_last(1);
     qos.best_effort();
@@ -60,6 +58,8 @@ public:
     this->get_parameter("_k_L", K_L);
     this->get_parameter("_E_D", E_D);
     this->get_parameter("_E_B", E_B);
+    this->get_parameter("_alpha_dist", ALPHA_DIST);
+    this->get_parameter("_alpha_yaw", ALPHA_YAW);
     this->get_parameter("_limit_covariance", LIMIT_COVARIANCE);
     this->get_parameter("_dynamic_covariance", DYNAMIC_COVARIANCE);
     this->get_parameter("_publish_odom_tf", PUBLISH_TF);
@@ -326,13 +326,11 @@ private:
     //local displacement in this time step (it should be asin of this, but assuming small angular displacement)
     double deltaTheta = (deltaS_R-deltaS_L)/(E_B * WHEEL_BASE);
     //local displacement in this time step
-    float deltaS = (deltaS_R+deltaS_L)/(2.0*1.0798);
+    float deltaS = (deltaS_R+deltaS_L)/(2.0*ALPHA_DIST);
     
     if(deltaTheta>0){
-      deltaTheta=deltaTheta/1.0702;
+      deltaTheta=deltaTheta/ALPHA_YAW;
     }
-
-
 
     //calculate new x, y, and theta
     float newYawEuler = deltaTheta + oldYawEuler;
@@ -614,6 +612,8 @@ private:
   double INITIAL_THETA;
   float K_R;
   float K_L;
+  float ALPHA_DIST;
+  float ALPHA_YAW;
   double E_D;
   double E_B;
   bool PUBLISH_PATH;
