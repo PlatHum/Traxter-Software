@@ -302,6 +302,9 @@ private:
     if(isnan(newOdom.pose.pose.position.x) || isnan(newOdom.pose.pose.position.y) || isnan(newYaw) ){
         return true;
     }
+    if(abs(newOdom.pose.pose.position.x-oldOdom.pose.pose.position.x)>2.0 || abs(newOdom.pose.pose.position.x-oldOdom.pose.pose.position.y)>2.0){
+      return true;
+    }
     return false;
 
  }
@@ -331,6 +334,10 @@ private:
     double deltaTheta = (deltaS_R-deltaS_L)/(E_B * WHEEL_BASE);
 
     //double tempAngle = oldYawEuler + deltaTheta/2;
+    deltaS/=1.0798;
+     if(deltaTheta>0){
+      deltaTheta/=1.0702;
+    }
 
 
     //calculate new x, y, and theta
