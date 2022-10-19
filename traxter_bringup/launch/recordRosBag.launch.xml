@@ -3,10 +3,6 @@
   <arg name="recordFile" default= "none" />
   <arg name="slamType" default= "none" />
 
-<!--     <group if="$(eval '\'$(var slamType)\' == \'tools\'')">
-        <executable cmd="ros2 bag record /cmd_vel /joy /traxter/encoder/ticks /traxter/imu/data/unprocessed /traxter/motor/command  /imu /camera/depth/camera_info /camera/depth/metadata /depth/image /diagnostics /joint_states /laser_status /map /odom /rgb/camera_info /rgb/image /robot_description /scan /tf /tf_static /traxter/odometry/raw /pose /map_metadata /slam_toolbox/feedback /slam_toolbox/graph_visualization /slam_toolbox/scan_visualization /slam_toolbox/update -o $(var recordFile)" output="screen" /> 
-    </group> -->
-
     <group unless="$(eval '\'$(var recordFile)\' == \'none\'')">
 
       <group if="$(eval '\'$(var slamType)\' == \'rtab\'')">
@@ -23,7 +19,7 @@
 
       <group if="$(eval '\'$(var slamType)\' == \'none\'')">
         <executable cmd="ros2 bag record /imu /traxter/encoder/ticks /cmd_vel -o $(var recordFile)_a" output="screen" />
-        <executable cmd="ros2 bag record /imu /traxter/odometry/raw /odom -o $(var recordFile)_mo" output="screen" />  
+        <executable cmd="ros2 bag record /imu /traxter/odometry/raw /odom /tf /tf_static /robot_description /joint_states /scan /camera/depth/camera_info /camera/depth/metadata /depth/image /rgb/camera_info /rgb/image -o $(var recordFile)_mo" output="screen" />  
       </group>
 
       <group if="$(eval '\'$(var slamType)\' == \'offline\'')">
