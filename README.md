@@ -8,13 +8,13 @@ The TIR-ANT is a tracked mobile robot with Simultaneous Localisation and Mapping
 - Hokuyo URG-04LX-UG01 2D laser rangefinder
 - ESP32 DevKit-C
 
-&nbsp;  
-![TIR-ANT](TIR-ANT.png)<div align="center"></div>  
+&nbsp;
+![TIR-ANT](TIR-ANT.png)
 &nbsp;  
 
 The name of the repository is an homage to the donor robot who donated its locomotion apparatus so that the TIR-ANT could be built, the Traxter robot.
 
-This work was developed by Francisco Gonçalves to obtain the Master of Science Degree in Mechanical Engineering at Instituto Superior Técnico da Universidade de Lisboa.
+This work was developed by Francisco Gonçalves to obtain the Master of Science Degree in Mechanical Engineering at Instituto Superior Técnico of Universidade de Lisboa.
 
 Licence: **TO BE DETERMINED**
 
@@ -27,3 +27,5 @@ This repository contains four branches:
 - The non```-stable``` branches are for code testing and prototyping.
 
 ## Installation
+
+_In Progress_
