@@ -28,4 +28,16 @@ This repository contains four branches:
 
 ## Installation
 
-_In Progress_
+These packages should be downloaded to a ROS2 Humble workspace in a ```src``` folder. The necessary dependencies should be installed by running the following command on the workspace's root directory:  
+```rosdep install --from-paths src -y --ignore-src```  
+
+However, managing dependencies is usually not as simple as running one single command. For sanity's sake, I listed all the packages installed on the TIR-ANT in [here](Installation.md).
+
+## Media
+
+Videos of the TIR-ANT working are made available on [TIR-ANT's Youtube channel](https://www.youtube.com/channel/UCXVvlVw6OO0v1a0kCItt89w).
+
+The dissertation of the project is available at: _TO BE DETERMINED_
+
+The extended abstract is available at: _TO BE DETERMINED_
+
