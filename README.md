@@ -1,7 +1,7 @@
 # Traxter Software Repository
 This is a repository for TIR-ANT's (**T**racked **I**nspired **R**obot **A**utonomous **N**avigation **T**ool) source-code.
 
-The TIR-ANT is a tracked mobile robot with Simultaneous Localisation and Mapping (SLAM) capabilities. It is a Ubuntu Jammy, ROS2-Humble based robot. The robots main hardware specifications are:
+The TIR-ANT is a tracked mobile robot with Simultaneous Localisation and Mapping (SLAM) capabilities. It is a Ubuntu Jammy, ROS2-Humble based robot. The robot's main hardware specifications are:
 - Raspberry Pi 4B 8GB
 - Adafruit BNO055 absolute orientation IMU
 - Intel RealSense D435
