@@ -14,10 +14,6 @@ The TIR-ANT is a tracked mobile robot with Simultaneous Localisation and Mapping
 
 The name of the repository is an homage to the donor robot who donated its locomotion apparatus so that the TIR-ANT could be built, the Traxter robot.
 
-This work was developed by Francisco Gonçalves to obtain the Master of Science Degree in Mechanical Engineering at Instituto Superior Técnico of Universidade de Lisboa.
-
-Licence: **TO BE DETERMINED**
-
 ## Branches
 
 This repository contains four branches:
@@ -34,7 +30,14 @@ These packages should be downloaded to a ROS2 Humble workspace in a ```src``` fo
 However, managing dependencies is usually not as simple as running one single command. For sanity's sake, I listed all the packages installed on the TIR-ANT in [here](Installation.md).
 
 ## Running the Robot
-_WORK IN PROGRESS_
+The process of turning on the robot and making it run on a specific setup is explained [here](RunningTheRobot.md).
+
+
+## Authorship and Licences
+
+This work was developed by Francisco Gonçalves to obtain the Master of Science Degree in Mechanical Engineering at Instituto Superior Técnico of Lisbon University.
+
+**License to be determined**
 
 ## Media
 
