@@ -21,10 +21,10 @@ Licence: **TO BE DETERMINED**
 ## Branches
 
 This repository contains four branches:
-- The ```traxter``` branches are the ones compatible with the robot itself and can run on it.
-- The ```dev``` branches are the ones that should run on the user's workstation. The main difference between these branches and the ```traxter``` ones is the inclusion of the gazebo-based simulation packages which are not compatible with the Raspberry Pi 4B's chip architecture.
+- The ```tirant``` branches are the ones compatible with the robot itself and can run on it.
+- The ```workstation``` branches are the ones that should run on the user's workstation. The main difference between these branches and the ```tirant``` ones is the inclusion of the gazebo-based simulation packages which are not compatible with the Raspberry Pi 4B's chip architecture.
 - The branches with ```-stable``` in their name are branches which only thoroughly tested code can be pushed to.
-- The non```-stable``` branches are for code testing and prototyping.
+- The ```-dev``` branches are for code testing and prototyping.
 
 ## Installation
 
