@@ -63,9 +63,9 @@ For the ESP32 DevKit-C to be recognised by the system it was necessary to disabl
 5. ```sudo usermod -a -G dialout $USER```
 6. ```sudo usermod -a -G tty $USER```
 
-### Micro-ROS
+### microROS
 
-Install the micro-ROS agent from [here]( https://micro.ros.org/docs/tutorials/core/first_application_linux/). The only steps needed are the first one and the "Creating the micro-ROS agent" one.
+Install the microROS agent from [here]( https://micro.ros.org/docs/tutorials/core/first_application_linux/). The only steps needed are the first one and the "Creating the micro-ROS agent" one.
 
 ### Notes
 
