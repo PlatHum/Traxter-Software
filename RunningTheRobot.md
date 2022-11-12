@@ -37,3 +37,5 @@ If something feels weird, normally the best policy is to turn whatever it is off
 ## Software Pipeline
 
 ![Alt text](Software%20Pipeline.png)
+
+_WORK IN PROGRESS_
