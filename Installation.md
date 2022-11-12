@@ -78,4 +78,4 @@ For communication with the robot, SSH communication was used using [Visual Studi
 
 Then the robot can be accessed remotely and its missions can be launched.
 
-For programming the ESP32, [PlatformIO](https://platformio.org/) was used on VS Code. If you use PlatformIO, don't forget to update the [udev rules](https://docs.platformio.org/en/latest/core/installation/udev-rules.html). The PlatformIO project with the code for the LowLevel is available [here](traxter_scripts/platformio/New-Traxter-Low-Level.zip)
+For programming the ESP32, [PlatformIO](https://platformio.org/) was used on VS Code. If you use PlatformIO, don't forget to update the [udev rules](https://docs.platformio.org/en/latest/core/installation/udev-rules.html). The PlatformIO project with the code for the Low-Level is available [here](traxter_scripts/platformio/New-Traxter-Low-Level.zip).
