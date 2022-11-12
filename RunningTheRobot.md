@@ -18,7 +18,6 @@
 | 13 	| ESP32 DevKit C 	|
 | 14 	| MD25 	|
 | 15 	| EMG30 	|
-|	|	|
 
 ## Turning it ON/OFF
 
