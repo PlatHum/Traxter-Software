@@ -60,3 +60,50 @@ You should calibrate the BNO055 until all status fields from the ```traxter/imu/
 
 Don't forget that each time the microROS agent is shut-down, the USB cable connecting the low-level and the Raspberry Pi should also be turned disconnected - and for good practice the low-level switch should also be turned off.  
 Note: there is some weird behaviour if the low-level switch is turned off while the USB cable is connected. Unless you are in an emergency, **first disconnect the USB cable and only after turn off the low-level switch**. The weird behaviour is related with the BNO055. If the procedure does not follow the aforementioned reccomended order, the BNO055 requires multiple power-cycles to stop it from entering an error state.
+
+### Launching a Mission
+
+The [```traxter_bringup```](traxter_bringup/) package is responsible for launching everything. It is advised that a careful analysis of the package's launchers be made before operating the robot. The main launcher file is the [```traxter_bringup.launch.py```](traxter_bringup/launch/traxter_bringup.launch.py). This launcher call all other more specific launchers of the same package that in turn launch all necessary nodes.  
+This launcher accepts the following arguments:
+- ```runType``` : which can be 
+    - ```realHard``` meaning that it is running on real hardware, aka, the TIR-ANT;
+    - ```fullSimul``` meaning that it is running on a worksation and the gazebo simulation will be launched;
+    - ```inLoop``` meaning that it will launch everything except the exteroceptive sensors on real hardware. The simulation is launched and the depth camera and rangefinder data come from the simulation, the movement from the real robot.
+- ```navType``` : which can be
+    - ```manual``` meaning that the PS3 controller relevant nodes will be launched for the robot motion to be controlled manually;
+    - ```auto``` meaning that some other node/package will publish on the relevant topics to make the robot move autonomously.
+- ```sensorType``` which can be:
+    - ```none``` meaning that no sensor wrappers need to be launched;
+    - ```lowlevel``` meaning that the microROS agent will be launched to interpret the information coming from the ESP32;
+    - ```hokuyo``` meaning that the Hokuyo rangefinder wrapper, the ```urg_node``` will be launched to take care of the data coming from the 2D rangefinder;
+    - ```realsense``` meaning that the RealSense wrapper will be launched to take care of the data coming from the depth camera;
+    - ```all``` meaning that all previous three options will be launched;
+    - ```perception``` combining the ```hokuyo``` and ```realsense``` options.
+- ```slamType``` which can be:
+    - ```none``` meaning that no SLAM package needs to be launched;
+    - ```tools``` meaning that the ```slam_toolbox``` needs to be launched;
+    - ```rtab``` meaning that the ```rtabmap_ros``` SLAM package will be launched.
+- ```recordFile``` which can be either ```none``` or any other name. If any other name is given as the value of the argument, the relevant topics will be recorded into a rosbag with the given name. For more information on which topics are recorded, please consult the [relevant launcher](traxter_bringup/launch/recordRosBag.launch.xml).
+- there are other arguments that can be given to the launcher, namely the location of other non-default config files, or the location of the world file for simulation. Please consult the [launcher](traxter_bringup/launch/traxter_bringup.launch.py) for a look at the code.
+
+So if the desired mission to be run on the TIR-ANT is one using the ```slam_toolbox``` package and assuming that the low-level as already been launched on another terminal and a rosbag recording of the mission is wanted with the name "example_command", the explicit command to be run is:  
+```ros2 launch traxter_bringup traxter_bringup.launch.py runType:=realHard navType:=manual sensorType:=hokuyo recordFile:=example_command slamType:=tools```  
+(most of these values are default and explicit commands for their value are not needed, please visit the launchers to see the default values)
+
+Also note that the main configuration files that load values to the parameter server for the various nodes to use for the real hardware and for simulation are [here](traxter_bringup/config/defaultHardware.yaml) and [here](traxter_bringup/config/defaultSimulation.yaml), respectively. All packages with the ```config``` folder include configuration values for that package. For SLAM algorithm tuning or EKF tuning, please take a look at them.
+
+### Notes
+The RTAB-Map algorithm launch process seems to be very computationally heavy for the Raspberry Pi. Launching it normally with the process described before does not seem to work. The board runs out of memory during launch and weird behaviour happens. To get around the issue, the reccomended procedure to launch a mission using the RTAB-Map SLAM is the following:
+1. Launch the low-level  
+```ros2 launch traxter_bringup sensors.launch.xml sensorType:=lowlevel```   
+Don't forget to have the ESP32 **and** the Hokuyo connected to the USB ports of the Raspberry or the USB-hub connected to the Raspberry. Don't forget to calibrate the BNO055 and to change the gravitational acceleration on the EKF configuration accordingly.
+2. Connect the depth camera to the USB-hub and then launch the perception  
+```ros2 launch traxter_bringup sensors.launch.xml sensorType:=perception```  
+Wait until both the urg node and the realsense node are running.
+3. Launch the pipeline without SLAM  
+```ros2 launch traxter_bringup traxter_bringup.launch.py runType:=realHard navType:=manual sensorType:=none recordFile:=none slamType:=none```
+4. Launch the RTAB-Map SLAM specifically  
+```ros2 launch traxter_bringup slamType.launch.xml slamType:=rtab```
+
+This should work. If not and there are a bunch of errors being printed on screen, repeat the process.
+
