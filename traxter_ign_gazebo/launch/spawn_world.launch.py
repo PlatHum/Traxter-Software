@@ -22,7 +22,7 @@ def generate_launch_description():
     install_dir = get_package_prefix(description_package_name)
 
     # Set the path to the WORLD model files. Is to find the models inside the models folder in traxter_ign_gazebo package
-    gazebo_models_path = os.path.join(pkg_traxter_ign_gazebo, 'models')
+    gazebo_models_path = os.path.join(pkg_traxter_ign_gazebo, 'worlds')
     # os.environ["IGN_GAZEBO_RESOURCE_PATH"] = gazebo_models_path
 
     if 'IGN_GAZEBO_RESOURCE_PATH' in os.environ:
@@ -48,9 +48,18 @@ def generate_launch_description():
             os.path.join(pkg_ign_gazebo_ros, 'launch', 'ign_gazebo.launch.py'),
         ),
         launch_arguments={
-            'ign_args': [PathJoinSubstitution([pkg_traxter_ign_gazebo, 'worlds', world])]
+            'ign_args': [PathJoinSubstitution([gazebo_models_path, world])]
         }.items(),
     )
+
+    # ign_gazebo = IncludeLaunchDescription(
+    #    PythonLaunchDescriptionSource(
+    #        os.path.join(pkg_ign_gazebo_ros, 'launch', 'ign_gazebo.launch.py'),
+    #    ),
+    #    launch_arguments={
+    #        'ign_args': [PathJoinSubstitution([pkg_traxter_ign_gazebo, 'worlds', world])]
+    #    }.items(),
+    #)
 
 
     return LaunchDescription([

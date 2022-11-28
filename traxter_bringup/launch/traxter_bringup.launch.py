@@ -28,7 +28,7 @@ def generate_launch_description():
     configFile = LaunchConfiguration('configFile')
     runType_arg = DeclareLaunchArgument(
           'runType',
-          default_value="realHard",
+          default_value="fullSimul",
           description='Type of run. [fullSimul,inLoop,realHard]')
 
     world_arg = DeclareLaunchArgument(
@@ -57,10 +57,10 @@ def generate_launch_description():
           description='What config parameter file to load from config directory of bringup.')
 
     #traxter_description_launch = IncludeLaunchDescription(
-     # PythonLaunchDescriptionSource([os.path.join(
-      #   get_package_share_directory('traxter_description'), 'launch',
-       #  'traxter_description.launch.py')])
-      #)
+    #  PythonLaunchDescriptionSource([os.path.join(
+    #     get_package_share_directory('traxter_description'), 'launch',
+    #     'traxter_description.launch.py')])
+    #  )
 
     runType_launch = IncludeLaunchDescription(
             [os.path.join(get_package_share_directory('traxter_bringup'), 'launch','runType.launch.xml')],

@@ -1,6 +1,6 @@
 <launch>
 
-  <arg name="runType" default="realHard" />
+  <arg name="runType" default="fullSimul" />
   <arg name="world" default="test.sdf" />
   <arg name="configFile" default="default" />
 
