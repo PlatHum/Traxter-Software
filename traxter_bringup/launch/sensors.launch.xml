@@ -1,44 +1,41 @@
 <launch>    
-    
+    <!-- launches the sensors of the robot. ONly applicable if in real hardware -->
     <arg name="sensorType" default= "all" />
 
 
 
-    <group if="$(eval '\'$(var sensorType)\' == \'all\'')">
-        <include file="$(find-pkg-share traxter_bringup)/launch/lowLevelAgent.launch.py">
-        </include> 
-        <node pkg="urg_node" exec="urg_node_driver" name="urg_node">
-            <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
-        </node> 
-        <include file="$(find-pkg-share traxter_bringup)/launch/realsense.launch.py">
-        </include>    
-    </group>
+        <group if="$(eval '\'$(var sensorType)\' == \'all\'')">
+            <include file="$(find-pkg-share traxter_bringup)/launch/lowLevelAgent.launch.py">
+            </include> 
+            <node pkg="urg_node" exec="urg_node_driver" name="urg_node">
+                <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
+            </node> 
+            <include file="$(find-pkg-share traxter_bringup)/launch/realsense.launch.py">
+            </include>    
+        </group>
 
-    <group if="$(eval '\'$(var sensorType)\' == \'perception\'')">
-        <node pkg="urg_node" exec="urg_node_driver" name="urg_node">
-            <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
-        </node> 
-        <include file="$(find-pkg-share traxter_bringup)/launch/realsense.launch.py">
-        </include>    
-    </group>
+        <group if="$(eval '\'$(var sensorType)\' == \'perception\'')">
+            <node pkg="urg_node" exec="urg_node_driver" name="urg_node">
+                <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
+            </node> 
+            <include file="$(find-pkg-share traxter_bringup)/launch/realsense.launch.py">
+            </include>    
+        </group>
 
-    <group if="$(eval '\'$(var sensorType)\' == \'lowlevel\'')">
-        <include file="$(find-pkg-share traxter_bringup)/launch/lowLevelAgent.launch.py">
-        </include>    
-    </group>
+        <group if="$(eval '\'$(var sensorType)\' == \'lowlevel\'')">
+            <include file="$(find-pkg-share traxter_bringup)/launch/lowLevelAgent.launch.py">
+            </include>    
+        </group>
 
-    <group if="$(eval '\'$(var sensorType)\' == \'realsense\'')">
-        <include file="$(find-pkg-share traxter_bringup)/launch/realsense.launch.py">
-        </include>    
-    </group>
+        <group if="$(eval '\'$(var sensorType)\' == \'realsense\'')">
+            <include file="$(find-pkg-share traxter_bringup)/launch/realsense.launch.py">
+            </include>    
+        </group>
 
-    <group if="$(eval '\'$(var sensorType)\' == \'hokuyo\'')">
-        <node pkg="urg_node" exec="urg_node_driver" name="urg_node">
-            <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
-        </node> 
-    </group>
-
-
-
+        <group if="$(eval '\'$(var sensorType)\' == \'hokuyo\'')">
+            <node pkg="urg_node" exec="urg_node_driver" name="urg_node">
+                <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
+            </node> 
+        </group>
 
 </launch>

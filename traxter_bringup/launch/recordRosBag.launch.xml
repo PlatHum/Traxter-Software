@@ -1,5 +1,5 @@
 <launch>
-
+<!-- a launcher for recording ROSbags. The topics recorded depend on the SLAM type. These should be changed according to the user's needs! -->
   <arg name="recordFile" default= "none" />
   <arg name="slamType" default= "none" />
 

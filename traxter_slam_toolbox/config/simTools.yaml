@@ -31,7 +31,7 @@ slam_toolbox:
     #The type of loss function to reject outlier measurements. None is equatable to a squared loss. 
     #Options: None, HuberLoss, CauchyLoss. 
     #Default: None.
-    ceres_loss_function: None
+    ceres_loss_function: HUberLoss
 
     #"mapping" or "localization" mode for performance optimizations in the Ceres problem creation
     mode: mapping 
@@ -50,23 +50,23 @@ slam_toolbox:
     #Number of scans to throttle in synchronous mode
     throttle_scans: 1
     #The map to odom transform publish period. 0 will not publish transforms
-    transform_publish_period: 0.05
+    transform_publish_period: 0.1
     #Interval to update the 2D occupancy map for other applications / visualization
-    map_update_interval: 1.0
+    map_update_interval: 0.2
     #Resolution of the 2D occupancy map to generate
     resolution: 0.05
     #Maximum laser range to use for 2D occupancy map rastering
-    max_laser_range: 4.0
+    max_laser_range: 4.5
     #The minimum duration of time between scans to be processed in synchronous mode
-    minimum_time_interval: 0.5
+    minimum_time_interval: 0.008
     #TF timeout for looking up transforms
     transform_timeout: 0.2
     #Duration to store TF messages for lookup. Set high if running offline at multiple times speed in synchronous mode.
-    tf_buffer_duration: 30.
+    tf_buffer_duration: 3.
     #The number of bytes to reset the stack size to, to enable serialization/deserialization of files.
     #A liberal default is 40000000, but less is fine.
     stack_size_to_use: 40000000
-    enable_interactive_mode: true
+    enable_interactive_mode: false
 
     # General Parameters
 
@@ -75,9 +75,9 @@ slam_toolbox:
     #Whether to use the barycenter or scan pose
     use_scan_barycenter: true
     #Minimum distance of travel before processing a new scan
-    minimum_travel_distance: 0.05
+    minimum_travel_distance: 0.01
     #Minimum changing in heading to justify an update
-    minimum_travel_heading: 0.025
+    minimum_travel_heading: 0.017
     #The number of scans to buffer into a chain, 
     #also used as the number of scans in the circular buffer of localization mode
     scan_buffer_size: 12
@@ -88,7 +88,7 @@ slam_toolbox:
     #Maximum distance between linked scans to be valid
     link_scan_maximum_distance: 1.5
     #Maximum threshold of distance for scans to be considered for loop closure
-    loop_search_maximum_distance: 4.0
+    loop_search_maximum_distance: 7.0
     #Whether to do loop closure (if you're not sure, the answer is "true")
     do_loop_closing: true 
     #The minimum chain length of scans to look for loop closure

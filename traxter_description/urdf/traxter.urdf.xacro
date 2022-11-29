@@ -557,7 +557,7 @@
               </linear_acceleration>
             </imu>
             <always_on>1</always_on>
-            <update_rate>30</update_rate>
+            <update_rate>50</update_rate>
           </sensor>
 
     </gazebo>

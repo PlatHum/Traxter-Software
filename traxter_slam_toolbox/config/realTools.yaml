@@ -92,7 +92,7 @@ slam_toolbox:
     #Whether to do loop closure (if you're not sure, the answer is "true")
     do_loop_closing: true 
     #The minimum chain length of scans to look for loop closure
-    loop_match_minimum_chain_size: 3
+    loop_match_minimum_chain_size: 4 #
     #The threshold variance in coarse search to pass to refine           
     loop_match_maximum_variance_coarse: 3.0
     #The threshold response of the loop closure algorithm in coarse search to pass to refine  

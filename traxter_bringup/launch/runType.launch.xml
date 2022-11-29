@@ -1,24 +1,10 @@
 <launch>
-
+<!-- dependeing on the run type either launches only the robot model description or the simulation and the model. -->
   <arg name="runType" default="realHard" />
   <arg name="world" default="test.sdf" />
   <arg name="configFile" default="default" />
 
-  <group if="$(eval '\'$(var runType)\' == \'inLoop\'')"> 
-    <include file="$(find-pkg-share traxter_description)/launch/traxter_description.launch.py">
-      <arg name="simTime" value= 'True'/>
-    </include>
-    <include file="$(find-pkg-share traxter_ign_gazebo)/launch/spawn_world.launch.py">
-      <arg name="world" value= "$(var world)" />
-    </include>
-    <include file="$(find-pkg-share traxter_ign_gazebo)/launch/spawn_traxter.launch.py">
-    </include> 
-    <include file="$(find-pkg-share traxter_ign_gazebo)/launch/inLoop_bridge.launch.py">
-    </include>
-    <include file="$(find-pkg-share traxter_bringup)/launch/lowLevelAgent.launch.py">
-    </include>
-  </group>
-
+  <!-- if in real hardware -->
   <group if="$(eval '\'$(var runType)\' == \'realHard\'')">  
     <include file="$(find-pkg-share traxter_description)/launch/traxter_description.launch.py">
       <arg name="simTime" value= 'False'/>

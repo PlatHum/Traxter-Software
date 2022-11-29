@@ -42,7 +42,6 @@ public:
 
 
 private:
-  // Define a function called 'topic_callback' that receives a parameter named 'msg' 
 
 void scan_topic_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg){
 
