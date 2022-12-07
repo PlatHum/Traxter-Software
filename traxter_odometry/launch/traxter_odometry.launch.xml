@@ -1,7 +1,9 @@
 <launch>
   <arg name="odomType" default="default" />
   <arg name="configFile" default="default" />
-  <arg name="runType" default="realHard" />
+  <arg name="runType" default="fullSimul" />
+  <arg name="simTime" default="true" />
+
 
   <group if="$(eval '\'$(var configFile)\' == \'default\'')">
     <group if="$(eval '\'$(var runType)\' == \'fullSimul\'')">
@@ -40,7 +42,7 @@
       <group if="$(eval '\'$(var odomType)\' == \'default\'')">
         <node pkg="traxter_odometry" exec="odometry_publisher_node" name="odometry_publisher">
           <param name="_run_type" type="int" value="2" />
-          <param name="use_sim_time" value="false" />
+          <param name="use_sim_time" value='$(var simTime)' />
           <param from="$(find-pkg-share traxter_bringup)/config/defaultHardware.yaml" />
         </node>
       </group>

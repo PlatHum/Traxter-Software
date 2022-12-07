@@ -1,0 +1,139 @@
+slam_toolbox:
+  ros__parameters:
+
+    # Plugin params
+
+    #The type of nonlinear solver to utilize for karto's scan solver.
+    #Options: solver_plugins::CeresSolver, solver_plugins::SpaSolver, solver_plugins::G2oSolver.
+    # Default: solver_plugins::CeresSolver.
+    solver_plugin: solver_plugins::CeresSolver
+
+    #The linear solver for Ceres to use. 
+    #Options: SPARSE_NORMAL_CHOLESKY, SPARSE_SCHUR, ITERATIVE_SCHUR, CGNR. 
+    #Defaults to SPARSE_NORMAL_CHOLESKY.
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+
+    #The preconditioner to use with that solver. 
+    #Options: JACOBI, IDENTITY (none), SCHUR_JACOBI. 
+    #Defaults to JACOBI.
+    ceres_preconditioner: SCHUR_JACOBI
+
+    #The trust region strategy. Line searach strategies are not exposed because they perform poorly for this use. 
+    #Options: LEVENBERG_MARQUARDT, DOGLEG. 
+    #Default: LEVENBERG_MARQUARDT.
+    ceres_trust_strategy: LEVENBERG_MARQUARDT
+
+    #The dogleg strategy to use if the trust strategy is DOGLEG. 
+    #Options: TRADITIONAL_DOGLEG, SUBSPACE_DOGLEG. 
+    #Default: TRADITIONAL_DOGLEG
+    ceres_dogleg_type: TRADITIONAL_DOGLEG
+
+    #The type of loss function to reject outlier measurements. None is equatable to a squared loss. 
+    #Options: None, HuberLoss, CauchyLoss. 
+    #Default: None.
+    ceres_loss_function: HUberLoss
+
+    #"mapping" or "localization" mode for performance optimizations in the Ceres problem creation
+    mode: mapping 
+
+    # ROS Parameters
+
+
+    odom_frame: odom
+    map_frame: map
+    base_frame: base_link
+    #scan topic, absolute path, ei /scan not scan
+    scan_topic: /scan
+
+    #Change logger to debug
+    debug_logging: true
+    #Number of scans to throttle in synchronous mode
+    throttle_scans: 1
+    #The map to odom transform publish period. 0 will not publish transforms
+    transform_publish_period: 0.1
+    #Interval to update the 2D occupancy map for other applications / visualization
+    map_update_interval: 0.2
+    #Resolution of the 2D occupancy map to generate
+    resolution: 0.05
+    #Maximum laser range to use for 2D occupancy map rastering
+    max_laser_range: 4.5
+    #The minimum duration of time between scans to be processed in synchronous mode
+    minimum_time_interval: 0.008
+    #TF timeout for looking up transforms
+    transform_timeout: 0.2
+    #Duration to store TF messages for lookup. Set high if running offline at multiple times speed in synchronous mode.
+    tf_buffer_duration: 3.
+    #The number of bytes to reset the stack size to, to enable serialization/deserialization of files.
+    #A liberal default is 40000000, but less is fine.
+    stack_size_to_use: 40000000
+    enable_interactive_mode: false
+
+    # General Parameters
+
+    #whether to use scan matching to refine odometric pose (uh, why would you not?)
+    use_scan_matching: true
+    #Whether to use the barycenter or scan pose
+    use_scan_barycenter: true
+    #Minimum distance of travel before processing a new scan
+    minimum_travel_distance: 0.01
+    #Minimum changing in heading to justify an update
+    minimum_travel_heading: 0.017
+    #The number of scans to buffer into a chain, 
+    #also used as the number of scans in the circular buffer of localization mode
+    scan_buffer_size: 12
+    #Maximum distance of a scan from the pose before removing the scan from the buffer
+    scan_buffer_maximum_scan_distance: 8.0
+    #The threshold link matching algorithm response for fine resolution to pass
+    link_match_minimum_response_fine: 0.1
+    #Maximum distance between linked scans to be valid
+    link_scan_maximum_distance: 1.5
+    #Maximum threshold of distance for scans to be considered for loop closure
+    loop_search_maximum_distance: 7.0
+    #Whether to do loop closure (if you're not sure, the answer is "true")
+    do_loop_closing: true 
+    #The minimum chain length of scans to look for loop closure
+    loop_match_minimum_chain_size: 15
+    #The threshold variance in coarse search to pass to refine           
+    loop_match_maximum_variance_coarse: 2.5
+    #The threshold response of the loop closure algorithm in coarse search to pass to refine  
+    loop_match_minimum_response_coarse: 0.25
+    #The threshold response of the loop closure algorithm in fine search to pass to refine    
+    loop_match_minimum_response_fine: 0.35
+
+    # Correlation Parameters
+
+    #Search grid size to do scan correlation over
+    correlation_search_space_dimension: 0.5
+    #Search grid resolution to do scan correlation over
+    correlation_search_space_resolution: 0.01
+    #Amount of multimodal smearing to smooth out responses
+    correlation_search_space_smear_deviation: 0.1 
+
+    # Correlation Parameters - Loop Closure Parameters
+
+    #Size of the search grid over the loop closure algorithm
+    loop_search_space_dimension: 8.0
+    #Search grid resolution to do loop closure over
+    loop_search_space_resolution: 0.05
+    #Amount of multimodal smearing to smooth out responses
+    loop_search_space_smear_deviation: 0.03
+
+    # Scan Matcher Parameters
+
+    #A penalty to apply to a matched scan as it differs from the odometric pose
+    distance_variance_penalty: 0.5 
+    #A penalty to apply to a matched scan as it differs from the odometric pose
+    angle_variance_penalty: 0.9    
+
+    #Range of angles to test for fine scan matching
+    fine_search_angle_offset: 0.00349 
+    #Range of angles to test for coarse scan matching    
+    coarse_search_angle_offset: 0.349
+    #Resolution of angles over the Offset range to test in scan matching   
+    coarse_angle_resolution: 0.0349 #0.001745
+    #Smallest penalty an angle can have to ensure the size doesn't blow up
+    minimum_angle_penalty: 0.85
+    #Smallest penalty a scan can have to ensure the size doesn't blow up
+    minimum_distance_penalty: 0.5
+    #Whether to automatically increase the search grid size if no viable match is found
+    use_response_expansion: true

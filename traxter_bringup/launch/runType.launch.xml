@@ -1,9 +1,17 @@
 <launch>
-
+<!-- dependeing on the run type either launches only the robot model description or the simulation and the model. -->
   <arg name="runType" default="fullSimul" />
   <arg name="world" default="test.sdf" />
   <arg name="configFile" default="default" />
 
+  <!-- if in real hardware -->
+  <group if="$(eval '\'$(var runType)\' == \'realHard\'')">  
+    <include file="$(find-pkg-share traxter_description)/launch/traxter_description.launch.py">
+      <arg name="simTime" value= 'False'/>
+    </include>
+  </group>
+
+  <!-- if in simulation -->
   <group if="$(eval '\'$(var runType)\' == \'fullSimul\'')">
     <include file="$(find-pkg-share traxter_description)/launch/traxter_description.launch.py">
       <arg name="simTime" value= 'True'/>
@@ -17,6 +25,7 @@
     </include>
   </group>
 
+  <!-- if in hardware in loop -->
   <group if="$(eval '\'$(var runType)\' == \'inLoop\'')"> 
     <include file="$(find-pkg-share traxter_description)/launch/traxter_description.launch.py">
       <arg name="simTime" value= 'True'/>
@@ -30,10 +39,5 @@
     </include>
   </group>
 
-  <group if="$(eval '\'$(var runType)\' == \'realHard\'')">  
-    <include file="$(find-pkg-share traxter_description)/launch/traxter_description.launch.py">
-      <arg name="simTime" value= 'False'/>
-    </include>
-  </group>
 
 </launch>

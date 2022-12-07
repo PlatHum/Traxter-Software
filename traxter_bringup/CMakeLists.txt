@@ -15,6 +15,7 @@ find_package(traxter_imu_interpreter REQUIRED)
 find_package(traxter_kinematics REQUIRED)
 find_package(traxter_ps3_controller REQUIRED)
 find_package(robot_localization REQUIRED)
+#find_package(realsense2_camera REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

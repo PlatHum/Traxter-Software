@@ -1,7 +1,11 @@
 # For now, ignore driver packages
 rtabmap/
 rtabmap_ros/
+traxter_ign_gazebo/
+hokuyo/
+realsense-ros/
 qualisys_cpp_sdk/
+traxter_ins/
 
 # No VSCode please
 .vscode/

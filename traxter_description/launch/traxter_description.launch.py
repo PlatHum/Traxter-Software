@@ -20,6 +20,7 @@ def generate_launch_description():
     #print("Fetching URDF")
     robot_desc_path = os.path.join(get_package_share_directory(package_description), "urdf", urdf_file)
 
+
     # Robot State Publisher
 
     robot_state_publisher_node = Node(
@@ -27,7 +28,7 @@ def generate_launch_description():
         executable='robot_state_publisher',
         name='robot_state_publisher_node',
         emulate_tty=True,
-        parameters=[{'use_sim_time': simTime, 'robot_description': Command(['xacro ', robot_desc_path])}],
+        parameters=[{'use_sim_time': simTime, 'ignore_timestamp': True,'robot_description': Command(['xacro ', robot_desc_path])}],
         output="screen"
     )
 
@@ -37,7 +38,7 @@ def generate_launch_description():
             DeclareLaunchArgument(
             'simTime',
             default_value='False',
-            description='Wheter to se simulation time or not on robot description.'),           
-            robot_state_publisher_node,
+            description='Whether to se simulation time or not on robot description.'),           
+            robot_state_publisher_node
         ]
     )

@@ -1,0 +1,43 @@
+/**:
+    ros__parameters:
+
+
+      frame_id : "base_link"
+      odom_frame_id: "odom"
+      odom_tf_linear_variance: 0.012
+      odom_tf_angular_variance: 0.01
+      map_frame_id: "map"
+
+      subscribe_depth : false
+      subscribe_rgbd : true
+      subscribe_stereo : false
+      subscribe_rgb : false
+      subscribe_scan : true
+      
+      publish_tf : true
+      tf_delay : 0.005
+      wait_for_transform : 0.2
+      approx_sync: true
+      
+      #cloud_noise_filtering_radius : 0.05
+      #cloud_noise_filtering_min_neighbors : 2
+
+
+      odom_sensor_sync : false       
+      queue_size : 20
+
+        
+      RGBD/NeighborLinkRefining : "true"
+      #RGBD/ProximityBySpace : "true"
+      RGBD/LinearUpdate : "0.01"
+      RGBD/OptimizeFromGraphEnd : "true"
+      #Grid/FromDepth : "false" 
+      Reg/Force3DoF : "true"
+      RGBD/AngularUpdate : "0.01"  
+      #Vis/CorType : "1"
+      Grid/MaxObstacleHeight: "1.0"
+      Grid/RangeMin : "0.005"
+      Grid/Sensor: "0" 
+      #RGBD/ProximityOdomGuess : "true"
+      Rtabmap/PublishRAMUsage : "true"
+      

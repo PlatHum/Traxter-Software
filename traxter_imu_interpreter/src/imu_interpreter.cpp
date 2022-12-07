@@ -20,15 +20,15 @@ public:
   imuInterpreter()
   : Node("imu_interpreter")
   {
+    this->declare_parameter("_initial_theta", 0.000001);
+    this->declare_parameter("_run_type", 0);//0 full simulation, 1 hardware in the loop, 2 real hardware
+    this->declare_parameter("_orientation_covariance", "[[1.63e-08, 1.99e-09,  1.533e-06], [1.99e-09, 3.435e-09,  3.311e-07], [1.533e-06, 3.311e-07,  0.0001507]]");
+    this->declare_parameter("_angular_velocity_covariance", "[[0.0001552, 8.187e-05,  -2.553e-07], [8.187e-05, 0.000146,  -6.395e-08], [-2.553e-07, -6.395e-08,  7.454e-08]]");
+    this->declare_parameter("_linear_acceleration_covariance", "[[0.01916, 0.004119,  0.006678], [0.004119, 0.01971,  0.02182], [0.006678, 0.02182,  0.09099]]");
 
-    this->declare_parameter("_run_type", 2);//0 full simulation, 1 hardware in the loop, 2 real hardware
-    this->declare_parameter("_orientation_covariance", "[[1.704e-05, 2.603e-07,  7.682e-07], [2.603e-07, 1.663e-05,  -6.332e-07], [7.682e-07, -6.332e-07,  1.521e-05]]");
-    this->declare_parameter("_angular_velocity_covariance", "[[4.265e-06, 6.012e-08,  1.107e-08], [6.012e-08, 8.837e-06,  5.647e-08], [1.107e-08, 5.647e-08,  4.042e-06]]");
-    this->declare_parameter("_linear_acceleration_covariance", "[[0.0002836, 4.167e-06,  -4.942e-08], [4.167e-06, 0.0002861,  9.564e-06], [-4.942e-08, 9.564e-06,  0.0002688]]");
 
-
-    rclcpp::QoS qos(3);
-    qos.keep_last(3);
+    rclcpp::QoS qos(1);
+    qos.keep_last(1);
     qos.best_effort();
     qos.durability_volatile();
 
@@ -37,6 +37,7 @@ public:
     this->get_parameter("_orientation_covariance", ORIENTATION_COVARIANCE);
     this->get_parameter("_angular_velocity_covariance", ANGULAR_VELOCITY_COVARIANCE);
     this->get_parameter("_linear_acceleration_covariance", LINEAR_ACCELERATION_COVARIANCE);
+    this->get_parameter("_initial_theta", INITIAL_THETA);
 
     switch (RUN_TYPE)
     {
@@ -82,23 +83,32 @@ public:
         }
       }
     }
+
+    prev_q.setRPY(0, 0, INITIAL_THETA);
+    prev_q.normalize();
   }
 
 private:
   // Define a function called 'topic_callback' that receives a parameter named 'msg' 
   void hardware_topic_callback(const traxter_msgs::msg::LightImu::SharedPtr msg)
   {
-    if(isFirst){
-      biasQuat[0]=msg->q0 - 100;
-      biasQuat[1]=msg->q1;
-      biasQuat[2]=msg->q2;
-      biasQuat[3]=msg->q3;
+
+    if (isFirst){
+      tf2::Quaternion inv_q((msg->q1)/100.0,(msg->q2)/100.0,(msg->q3)/100.0,-(msg->q0)/100.0);//notice the minus
+      offset_q=QuaternionRotation(prev_q, inv_q);
       isFirst=false;
     }
-    standard_imu_message.orientation.x=(-msg->q1 + biasQuat[1])/100.0;
-    standard_imu_message.orientation.y=(-msg->q2 + biasQuat[2])/100.0;
-    standard_imu_message.orientation.z=(msg->q3 - biasQuat[3])/100.0;
-    standard_imu_message.orientation.w=(msg->q0 - biasQuat[0])/100.0;
+
+    tf2::Quaternion q((msg->q1)/100.0,(msg->q2)/100.0,(msg->q3)/100.0,(msg->q0)/100.0);
+    tf2::Quaternion rotated_q = QuaternionRotation(q, offset_q);
+
+/*     tf2::Quaternion q((msg->q1)/100.0,(msg->q2)/100.0,(msg->q3)/100.0,(msg->q0)/100.0);
+    q.normalize(); */
+
+    standard_imu_message.orientation.x= rotated_q.x();
+    standard_imu_message.orientation.y= rotated_q.y();
+    standard_imu_message.orientation.z= rotated_q.z();
+    standard_imu_message.orientation.w= rotated_q.w();
 
     standard_imu_message.angular_velocity.x=msg->gyrox/100.0;
     standard_imu_message.angular_velocity.y=msg->gyroy/100.0;
@@ -108,8 +118,46 @@ private:
     standard_imu_message.linear_acceleration.z=msg->accz/100.0;
     standard_imu_message.header.stamp=this->now();
 
+    if(msg->mag_status<3){
+      if(magCalLevel-msg->mag_status>0){
+        standard_imu_message.orientation_covariance[mapCov[2][2]]*=2.0;
+        standard_imu_message.orientation_covariance[mapCov[1][1]]*=2.0;
+        standard_imu_message.orientation_covariance[mapCov[0][0]]*=2.0;  
+      }
+      uncalibMag+=1;
+      if(uncalibMag>1000){
+        RCLCPP_WARN(this->get_logger(), "Magnetometer not fully calibrated! Level: %d/3",msg->mag_status);
+        uncalibMag=0;
+      }   
+    }
+
     publisher_->publish(standard_imu_message);
+
+    if(msg->gyro_status<3){
+      uncalibGyro++;
+      if(uncalibGyro>1000){
+        RCLCPP_WARN(this->get_logger(), "Gyroscope not fully calibrated! Level: %d/3",msg->gyro_status);
+        uncalibGyro=0;
+      }
+    }
+    if(msg->acc_status<3){
+      uncalibAccel++;
+      if(uncalibAccel>1000){
+        RCLCPP_WARN(this->get_logger(), "Accelerometer not fully calibrated! Level: %d/3",msg->acc_status);
+        uncalibAccel=0;
+      }    
+    }
+
+      if(msg->mag_status>5 || msg->acc_status>5 || msg->gyro_status>5){
+
+        RCLCPP_FATAL(this->get_logger(), "IMU NOT CONNECTED PROPERLY!");
+
+      } 
+
+    prev_q=q;
+    magCalLevel=msg->mag_status;   
   }
+
 
 void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
 
@@ -121,7 +169,7 @@ void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
       currentTime = rclcpp::Time(msg->header.stamp.sec , msg->header.stamp.nanosec);
     }
 
-      double deltaT= (currentTime-previousTime).nanoseconds()*1e-9;
+/*       double deltaT= (currentTime-previousTime).nanoseconds()*1e-9;
       double pitch = prevPitch + deltaT * 0.5 * (msg->angular_velocity.y + standard_imu_message.angular_velocity.y);
       double roll = prevRoll + deltaT * 0.5 * (msg->angular_velocity.x + standard_imu_message.angular_velocity.x);
       double yaw = prevYaw + deltaT * 0.5 * (msg->angular_velocity.z + standard_imu_message.angular_velocity.z);
@@ -131,7 +179,7 @@ void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
       msg->orientation.x= q.x();
       msg->orientation.y= q.y();
       msg->orientation.z= q.z();
-      msg->orientation.w= q.w();
+      msg->orientation.w= q.w(); */
 
       for (size_t i = 0; i < 3; i++){
         for (size_t j = 0; j <= i; j++){
@@ -147,19 +195,20 @@ void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
       }
       previousTime = currentTime;
       msg->header.frame_id="imu_link";
+      publisher_->publish(*msg);
 
-      if(cycles>29){
+/*       if(cycles>1){
         publisher_->publish(*msg);
       }else{
         cycles++;
-      }
+      } */
 
-  standard_imu_message.angular_velocity.x=msg->angular_velocity.x;
+/*   standard_imu_message.angular_velocity.x=msg->angular_velocity.x;
   standard_imu_message.angular_velocity.y=msg->angular_velocity.y;
   standard_imu_message.angular_velocity.z=msg->angular_velocity.z;
   prevRoll = roll;
   prevPitch = pitch;
-  prevYaw = yaw;
+  prevYaw = yaw; */
   
 
 };
@@ -224,6 +273,13 @@ void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
     return result;
   };
 
+  tf2::Quaternion QuaternionRotation(tf2::Quaternion q_rot, tf2::Quaternion q_org){ //from q_org to q_new
+
+    tf2::Quaternion q_new = q_rot * q_org;
+    q_new.normalize();
+    return q_new;
+  };
+
   rclcpp::Subscription<traxter_msgs::msg::LightImu>::SharedPtr hardware_subscription_;
   rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr simul_subscription_;
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr publisher_;
@@ -245,6 +301,13 @@ void simulation_topic_callback(const sensor_msgs::msg::Imu::SharedPtr msg){
   double prevRoll = 0;
   double prevYaw = 0;
   int cycles=0;
+  uint uncalibGyro=0;
+  uint uncalibMag=0;
+  uint uncalibAccel=0;
+  uint magCalLevel=3;
+  tf2::Quaternion offset_q;
+  tf2::Quaternion prev_q;
+  float INITIAL_THETA;
 };
 
 int main(int argc, char * argv[])

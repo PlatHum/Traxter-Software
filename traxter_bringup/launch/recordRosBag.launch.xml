@@ -1,0 +1,30 @@
+<launch>
+<!-- a launcher for recording ROSbags. The topics recorded depend on the SLAM type. These should be changed according to the user's needs! -->
+  <arg name="recordFile" default= "none" />
+  <arg name="slamType" default= "none" />
+
+    <group unless="$(eval '\'$(var recordFile)\' == \'none\'')">
+
+      <group if="$(eval '\'$(var slamType)\' == \'rtab\'')">
+        <executable cmd="ros2 bag record /cmd_vel /traxter/motor/command  /imu /cloud_obstacles /user_data_async /global_path /global_path_nodes /global_pose /goal /goal_node /goal_out /goal_reached /gps/fix /grid_prob_map /info /initialpose /joint_states /labels /landmarks /local_grid_empty /local_grid_ground /local_grid_obstacle /local_path /local_path_nodes /localization_pose /map /mapData /mapGraph /mapOdomCache /mapPath /octomap_binary /octomap_empty_space /octomap_full /octomap_global_frontier_space /octomap_grid /octomap_ground /octomap_obstacles /octomap_occupied_space /odom /republish_node_data /robot_description /scan /set_pose /tf /tf_static /traxter/odometry/raw -o $(var recordFile)" output="screen" /> 
+      </group>
+
+      <group if="$(eval '\'$(var slamType)\' == \'tools\'')">
+        <executable cmd="ros2 bag record /cmd_vel /joy /traxter/motor/command /imu  /joint_states /map /odom /robot_description /scan /tf /tf_static /traxter/odometry/raw /pose /map_metadata /slam_toolbox/feedback /slam_toolbox/graph_visualization /slam_toolbox/scan_visualization /slam_toolbox/update -o $(var recordFile)" output="screen" /> 
+      </group>
+
+      <group if="$(eval '\'$(var slamType)\' == \'carto\'')">
+        <executable cmd="ros2 bag record /cmd_vel /joy /traxter/encoder/ticks /traxter/imu/data/unprocessed /traxter/motor/command  /imu /camera/depth/camera_info /camera/depth/metadata /depth/image /diagnostics /joint_states /laser_status /map /odom /rgb/camera_info /rgb/image /robot_description /scan /tf /tf_static /traxter/odometry/raw /submap_list /tracked_pose /landmark_poses_list /constraint_list /trajectory_node_list /scan_matched_points2 -o $(var recordFile)" output="screen" /> 
+      </group>
+
+      <group if="$(eval '\'$(var slamType)\' == \'none\'')">
+        <executable cmd="ros2 bag record /imu /traxter/encoder/ticks /cmd_vel -o $(var recordFile)_a" output="screen" />
+        <executable cmd="ros2 bag record /imu /traxter/odometry/raw /odom /tf /tf_static /robot_description /joint_states /scan /camera/depth/camera_info /camera/depth/metadata /depth/image /rgb/camera_info /rgb/image -o $(var recordFile)_mo" output="screen" />  
+      </group>
+
+      <group if="$(eval '\'$(var slamType)\' == \'offline\'')">
+        <executable cmd="ros2 bag record /cmd_vel /joy /traxter/encoder/ticks /traxter/imu/data/unprocessed /traxter/motor/command /imu /joint_states /odom /robot_description /tf /tf_static /traxter/odometry/raw /scan /laser_status /depth/image /rgb/camera_info /rgb/image -o $(var recordFile)" output="screen" /> 
+      </group>
+
+    </group>
+</launch>

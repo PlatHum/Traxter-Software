@@ -1,6 +1,7 @@
   <launch>
   <arg name="configFile" default="default" />
   <arg name="runType" default="realHard" />
+  <arg name="simTime" default="false" />
 
   <group if="$(eval '\'$(var configFile)\' == \'default\'')">
     <group if="$(eval '\'$(var runType)\' == \'fullSimul\'')">
@@ -48,7 +49,7 @@
     <group if="$(eval '\'$(var runType)\' == \'realHard\'')">
         <node pkg="traxter_imu_interpreter" exec="imu_interpreter_node" name="imu_interpreter">
           <param name="_run_type" type="int" value="2" />
-          <param name="use_sim_time" value="false" />
+          <param name="use_sim_time" value='$(var simTime)' />
           <param from="$(find-pkg-share traxter_bringup)/config/$(var configFile)" />
         </node>
     </group>

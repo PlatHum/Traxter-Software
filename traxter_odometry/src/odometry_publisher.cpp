@@ -3,9 +3,11 @@
 #include <traxter_msgs/msg/dual_motor_array.hpp>
 #include "nav_msgs/msg/odometry.hpp"
 #include <tf2/LinearMath/Quaternion.h>
+#include <tf2_ros/transform_broadcaster.h>
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <nav_msgs/msg/path.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <math.h>
 #include <cstdio>  // for EOF
 #include <string>
@@ -29,18 +31,19 @@ public:
     this->declare_parameter("_ticks_per_wheel_rev", 360);
     this->declare_parameter("_initial_x", 0.0);
     this->declare_parameter("_initial_y", 0.0);
-    this->declare_parameter("_initial_theta", 0.00000000001);
-    this->declare_parameter("_alpha_L", 1.0);
-    this->declare_parameter("_alpha_R", 1.0);
+    this->declare_parameter("_initial_theta", 0.000000001);
     this->declare_parameter("_k_R", 0.1);
     this->declare_parameter("_k_L", 0.1);
     this->declare_parameter("_E_D", 1.0);
     this->declare_parameter("_E_B", 1.0);
-    this->declare_parameter("_update_odometry", false);
+    this->declare_parameter("_alpha_dist", 1.0);
+    this->declare_parameter("_alpha_yaw", 1.0);
+    this->declare_parameter("_publish_odom_path", false);
     this->declare_parameter("_limit_covariance", "[[0.0017, 0.00259,  0.00507], [0.00259, 0.0041,  0.0078], [0.00507, 0.0078,  0.018]]");
     this->declare_parameter("_dynamic_covariance", false);
-    rclcpp::QoS qos(3);
-    qos.keep_last(3);
+    this->declare_parameter("_publish_odom_tf", false);
+    rclcpp::QoS qos(1);
+    qos.keep_last(1);
     qos.best_effort();
     qos.durability_volatile();
 
@@ -50,16 +53,18 @@ public:
     this->get_parameter("_ticks_per_wheel_rev", TICKSPERWHEELREV);
     this->get_parameter("_initial_x", INITIAL_X);
     this->get_parameter("_initial_y", INITIAL_Y);
-    this->get_parameter("_alpha_R", ALPHA_R);
-    this->get_parameter("_alpha_L", ALPHA_L);
     this->get_parameter("_initial_theta", INITIAL_THETA);
     this->get_parameter("_k_R", K_R);
     this->get_parameter("_k_L", K_L);
     this->get_parameter("_E_D", E_D);
     this->get_parameter("_E_B", E_B);
-    this->get_parameter("_update_odometry", UPDATE_ODOM);
+    this->get_parameter("_alpha_dist", ALPHA_DIST);
+    this->get_parameter("_alpha_yaw", ALPHA_YAW);
     this->get_parameter("_limit_covariance", LIMIT_COVARIANCE);
-    this->get_parameter("_dynamic_covariance", DYNAMIC_COVARIANCE);  
+    this->get_parameter("_dynamic_covariance", DYNAMIC_COVARIANCE);
+    this->get_parameter("_publish_odom_tf", PUBLISH_TF);
+    this->get_parameter("_publish_odom_path", PUBLISH_PATH);
+  
 
     switch (RUN_TYPE)
     {
@@ -87,15 +92,18 @@ public:
       break;
     }
 
-    if (UPDATE_ODOM){
-          update_timer_ = create_wall_timer( 500ms, std::bind(&odometryPublisher::update_timer_callback, this));
-          filter_subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
-          "odom", 1, std::bind(&odometryPublisher::update_odom_callback, this, _1));
+    if (PUBLISH_PATH){
+      odom_path_publisher_=this->create_publisher<nav_msgs::msg::Path>("traxter/path/odometry/raw",1);
     }
-    
 
-    odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("traxter/odometry/raw",1);
-    odom_path_publisher_=this->create_publisher<nav_msgs::msg::Path>("traxter/path/odometry/raw",1);
+    if(PUBLISH_TF){
+        // Initialize the transform broadcaster
+      tf_broadcaster_ =
+        std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+        odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("odom",1);
+    }else{
+        odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("traxter/odometry/raw",1);
+    }
 
     setup_variables();
   };
@@ -107,7 +115,6 @@ private:
     std::string ERROR;
     limit_covariance = parseVVF(LIMIT_COVARIANCE, ERROR);
 
-    effectiveWheelBase=WHEEL_BASE/E_B;
     newOdom.pose.pose.position.x = INITIAL_X;
     newOdom.pose.pose.position.y = INITIAL_Y;
     oldOdom.pose.pose.position.x = INITIAL_X;
@@ -140,15 +147,15 @@ private:
     pose_jacobian[2][1]=0.0;
     pose_jacobian[2][0]=0.0;
     pose_jacobian[2][2]=1.0;
-    motion_increment_jacobian[2][0]=1/effectiveWheelBase;
-    motion_increment_jacobian[2][1]=-1/effectiveWheelBase;
+    motion_increment_jacobian[2][0]=1/(E_B*WHEEL_BASE);
+    motion_increment_jacobian[2][1]=-1/(E_B*WHEEL_BASE);
     }else{
       for (size_t i = 0; i < 3; i++)
       {
         for (size_t j = 0; j <= i; j++)
         {
           newOdom.pose.covariance[mapCov[i][j]]= limit_covariance[i][j];
-          newOdom.twist.covariance[mapCov[i][j]]=1.3*limit_covariance[i][j];
+          newOdom.twist.covariance[mapCov[i][j]]=1.05*limit_covariance[i][j];
           if (i!=j){
             newOdom.pose.covariance[mapCov[j][i]]=newOdom.pose.covariance[mapCov[i][j]];
             newOdom.twist.covariance[mapCov[j][i]]= newOdom.twist.covariance[mapCov[i][j]];
@@ -174,11 +181,18 @@ private:
       oldRticks=0;
       oldLticks=0;
     }
+    if(isFirst){
+      oldRticks=newRticks;
+      oldLticks=newLticks;
+      isFirst=false;
+      oldTime = this->now();      
+    }
+
+    deltaEncoderTicks();
     newTime = this->now();
     newOdom.header.stamp = newTime;
-    deltaEncoderTicks();
-    runAlgorithm();
     publishJointState();
+    runAlgorithm();
   };
 
   void simulation_topic_callback(const sensor_msgs::msg::JointState::SharedPtr msg)
@@ -214,24 +228,37 @@ private:
 
     if (deltaLeftTicks > 1000000){
 
+      encoderFailure=true;
       deltaLeftTicks=imin + deltaLeftTicks;
     
     }else if (deltaLeftTicks < -1000000){
+
+      encoderFailure=true;
 
       deltaLeftTicks = imax-deltaLeftTicks;
     }
 
     if (deltaRightTicks > 1000000){
 
+      encoderFailure=true;
+
       deltaRightTicks=imin + deltaRightTicks;
     
     }else if (deltaRightTicks < -1000000){
+      encoderFailure=true;
 
       deltaRightTicks = imax-deltaRightTicks;
     }
-
-    oldLticks =newLticks;
-    oldRticks =newRticks;      
+    if (encoderFailure)
+    {
+      deltaRightTicks=0;
+      deltaLeftTicks=0;
+      encoderFailure=false;
+    }else{
+      oldLticks =newLticks;
+      oldRticks =newRticks; 
+    }
+         
 
   };
 
@@ -241,15 +268,17 @@ private:
 
     if (timeToPublish){
       odom_publisher_->publish(newOdom);
+      if(PUBLISH_TF){
+         publish_transform();
+      }
     }
-
-    updateOdomPath();
-
-    if (timeToPublish){
-      odom_path_publisher_->publish(odomPath);
-      if(RUN_TYPE==runTypeList::fullSimul) timeToPublish=false;
+    if (PUBLISH_PATH){
+      updateOdomPath();
+        if (timeToPublish){
+        odom_path_publisher_->publish(odomPath);
+        if(RUN_TYPE==runTypeList::fullSimul) timeToPublish=false;
+      }
     }
-    odom_path_publisher_->publish(odomPath);
   };
 
   double reframeAngle(double angle){
@@ -276,12 +305,10 @@ private:
 
  }
 
-  void estimateVelocityUsingTicks(){
+  void estimateVelocityUsingTicks(double deltaT){
 
-    double deltaT=(newTime - oldTime).nanoseconds()*1e-9;
-
-    double leftWheelSpeed=deltaLeftTicks/deltaT *2*PI / TICKSPERWHEELREV;
-    double rightWheelSpeed=deltaRightTicks/deltaT *2*PI / TICKSPERWHEELREV;
+    double leftWheelSpeed=((deltaLeftTicks/deltaT) *2*PI) / TICKSPERWHEELREV;
+    double rightWheelSpeed=((deltaRightTicks/deltaT) *2*PI) / TICKSPERWHEELREV;
 
     newOdom.twist.twist.linear.x = (leftWheelSpeed+rightWheelSpeed)*WHEEL_RADIUS/2;
     newOdom.twist.twist.linear.y = 0;
@@ -293,22 +320,22 @@ private:
     
     calculatingOdom=true;
 
-    double deltaS_R = (2*PI*WHEEL_RADIUS/(static_cast<float>(TICKSPERWHEELREV))) * (E_D*static_cast<float>(deltaRightTicks)/ALPHA_R);
-    double deltaS_L = (2*PI*WHEEL_RADIUS/(static_cast<float>(TICKSPERWHEELREV))) * (static_cast<float>(deltaLeftTicks)/ALPHA_L);
-
-    //local displacement in this time step
-    double deltaS = (deltaS_R+deltaS_L)/2;
+    double deltaS_R = (2*PI*WHEEL_RADIUS/(static_cast<float>(TICKSPERWHEELREV))) * (E_D*static_cast<float>(deltaRightTicks));
+    double deltaS_L = (2*PI*WHEEL_RADIUS/(static_cast<float>(TICKSPERWHEELREV))) * (static_cast<float>(deltaLeftTicks));
 
     //local displacement in this time step (it should be asin of this, but assuming small angular displacement)
     double deltaTheta = (deltaS_R-deltaS_L)/(E_B * WHEEL_BASE);
-
-    double tempAngle = oldYawEuler + deltaTheta/2;
-
+    //local displacement in this time step
+    float deltaS = (deltaS_R+deltaS_L)/(2.0*ALPHA_DIST);
+    
+    if(deltaTheta>0){
+      deltaTheta=deltaTheta/ALPHA_YAW;
+    }
 
     //calculate new x, y, and theta
-    newOdom.pose.pose.position.x = oldOdom.pose.pose.position.x + cos(tempAngle)*deltaS;
-    newOdom.pose.pose.position.y = oldOdom.pose.pose.position.y + sin(tempAngle)*deltaS;
-    double newYawEuler = deltaTheta + oldYawEuler;  
+    float newYawEuler = deltaTheta + oldYawEuler;
+    newOdom.pose.pose.position.x = oldOdom.pose.pose.position.x + cos(newYawEuler)*deltaS;
+    newOdom.pose.pose.position.y = oldOdom.pose.pose.position.y + sin(newYawEuler)*deltaS;  
 
     //prevent lockup from a single erroneous cycle
     if(!checkErroneousCycle(newYawEuler)){
@@ -323,13 +350,15 @@ private:
 
       //estimate velocity
       double deltaT=(newTime.nanoseconds() - oldTime.nanoseconds())*1e-9;
-      if(deltaT>0.001){//avoid weird time behaviour in simulation
-        newOdom.twist.twist.linear.x = deltaS/deltaT;
-        newOdom.twist.twist.angular.z = deltaTheta/deltaT;
+      if(deltaT>0.0001){//avoid weird time behaviour in simulation
+/*         newOdom.twist.twist.linear.x = deltaS/deltaT;
+        newOdom.twist.twist.linear.y = 0.0;
+        newOdom.twist.twist.angular.z = deltaTheta/deltaT; */
+        estimateVelocityUsingTicks(deltaT);
       }
 
       if (DYNAMIC_COVARIANCE){
-        updateOdomPoseCovariance(deltaS_R, deltaS_L, deltaS, tempAngle);
+        updateOdomPoseCovariance(deltaS_R, deltaS_L, deltaS, deltaTheta);
         updateOdomTwistCovariance(deltaT);
         oldOdom.pose.covariance = newOdom.pose.covariance;
       }
@@ -349,12 +378,13 @@ private:
 
 
   void publishJointState(){
-    double left_side_position= static_cast<float>(newLticks/TICKSPERWHEELREV*PI/180);
-    double right_side_position=static_cast<float>(newRticks/TICKSPERWHEELREV*PI/180);
+
+    float left_side_position= static_cast<float>(newLticks)/static_cast<float>(TICKSPERWHEELREV)*2.0*PI;
+    float right_side_position=static_cast<float>(newRticks)/static_cast<float>(TICKSPERWHEELREV)*2.0*PI;
 
     traxter_joints.position.clear();
     traxter_joints.position={left_side_position,right_side_position,left_side_position,right_side_position};
-    traxter_joints.header.stamp=this->now();
+    traxter_joints.header.stamp=newOdom.header.stamp;
     joint_state_publisher_->publish(traxter_joints); 
 
   };
@@ -374,16 +404,16 @@ private:
     motion_increment_covar[1][1] = K_L*abs(delta_left);
     pose_jacobian[0][2] = -deltaS*sin(updateAngle);
     pose_jacobian[1][2] = deltaS*cos(updateAngle);
-    motion_increment_jacobian[0][0] = 0.5*cos(updateAngle) - deltaS/(2*effectiveWheelBase)*sin(updateAngle);
-    motion_increment_jacobian[0][1] = 0.5*cos(updateAngle) + deltaS/(2*effectiveWheelBase)*sin(updateAngle);
-    motion_increment_jacobian[1][0] = 0.5*sin(updateAngle) + deltaS/(2*effectiveWheelBase)*cos(updateAngle);
-    motion_increment_jacobian[1][1] = 0.5*sin(updateAngle) - deltaS/(2*effectiveWheelBase)*cos(updateAngle);
+    motion_increment_jacobian[0][0] = 0.5*cos(updateAngle) - deltaS/(2*E_B*WHEEL_BASE)*sin(updateAngle);
+    motion_increment_jacobian[0][1] = 0.5*cos(updateAngle) + deltaS/(2*E_B*WHEEL_BASE)*sin(updateAngle);
+    motion_increment_jacobian[1][0] = 0.5*sin(updateAngle) + deltaS/(2*E_B*WHEEL_BASE)*cos(updateAngle);
+    motion_increment_jacobian[1][1] = 0.5*sin(updateAngle) - deltaS/(2*E_B*WHEEL_BASE)*cos(updateAngle);
 
     for (size_t k = 0; k < 3; k++){
       for (size_t i = 0; i <= k; i++){ //covariance matrix is symetric
         
-        double tempA=0;
-        double tempB=0;
+        float tempA=0;
+        float tempB=0;
         
         for (size_t j = 0; j < 3; j++){
 
@@ -434,32 +464,36 @@ private:
     }    
   };
 
-  void update_timer_callback(){
-    timeToUpdate=true;
-  };
-
   void publish_timer_callback(){
     timeToPublish=true;
   };
 
-  void update_odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg){
+  void publish_transform(){
+    geometry_msgs::msg::TransformStamped t;
 
-    if (timeToUpdate && !calculatingOdom){
-      oldOdom.header.stamp = msg->header.stamp;
-      oldTime = rclcpp::Time( msg->header.stamp.sec, msg->header.stamp.nanosec);
-      oldOdom.pose.pose.position.x=msg->pose.pose.position.x;
-      oldOdom.pose.pose.position.y=msg->pose.pose.position.y;
-      oldOdom.pose.covariance=msg->pose.covariance;
+    // Read message content and assign it to
+    // corresponding tf variables
+    t.header= newOdom.header;
+    t.header.stamp=this->now();
+    t.child_frame_id = "base_link";
 
-      double siny_cosp = 2 * (msg->pose.pose.orientation.w * msg->pose.pose.orientation.z + 
-                          msg->pose.pose.orientation.x * msg->pose.pose.orientation.y);
-      double cosy_cosp = 1 - 2 * (msg->pose.pose.orientation.y * msg->pose.pose.orientation.y +
-                          msg->pose.pose.orientation.z * msg->pose.pose.orientation.z);
-      oldYawEuler = atan2(siny_cosp, cosy_cosp);
-      timeToUpdate=false;
-    }
-    
-  };
+    // Turtle only exists in 2D, thus we get x and y translation
+    // coordinates from the message and set the z coordinate to 0
+    t.transform.translation.x = newOdom.pose.pose.position.x;
+    t.transform.translation.y = newOdom.pose.pose.position.y;
+    t.transform.translation.z = 0.0;
+
+    // For the same reason, turtle can only rotate around one axis
+    // and this why we set rotation in x and y to 0 and obtain
+    // rotation in z axis from the message
+    t.transform.rotation.x = newOdom.pose.pose.orientation.x;
+    t.transform.rotation.y = newOdom.pose.pose.orientation.y;
+    t.transform.rotation.z = newOdom.pose.pose.orientation.z;
+    t.transform.rotation.w = newOdom.pose.pose.orientation.w;
+
+    // Send the transformation
+    tf_broadcaster_->sendTransform(t);
+  }
 
   std::vector<std::vector<double>> parseVVF(const std::string & input, std::string & error_return)
   {
@@ -527,9 +561,7 @@ private:
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr odom_path_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_publisher_;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr simul_subscription_;
-  rclcpp::TimerBase::SharedPtr update_timer_;
   rclcpp::TimerBase::SharedPtr publish_timer_;
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr filter_subscription_;
 
 
 
@@ -550,8 +582,6 @@ private:
   int deltaLeftTicks=0;
   int deltaRightTicks=0;
 
-  double effectiveWheelBase;
-
   double motion_increment_covar[2][2] = { {0.0, 0.0}, {0.0, 0.0}};
   double pose_jacobian[3][3] = { {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
   int mapCov[3][3] = { {0, 1, 5}, {6, 7, 11}, {30, 31, 35}};
@@ -567,29 +597,35 @@ private:
   bool timeToPublish=true;
   bool covarianceLimit=false;
 
+  bool isFirst=true;
+  bool encoderFailure=false;
+
   std::vector<std::vector<double>> limit_covariance;
 
 //parameter holders
   int TICKSPERWHEELREV;
-  double WHEEL_RADIUS;
-  double WHEEL_BASE;
+  float WHEEL_RADIUS;
+  float WHEEL_BASE;
   int RUN_TYPE;
-  double INITIAL_X;
-  double INITIAL_Y;
+  float INITIAL_X;
+  float INITIAL_Y;
   double INITIAL_THETA;
-  double K_R;
-  double K_L;
+  float K_R;
+  float K_L;
+  float ALPHA_DIST;
+  float ALPHA_YAW;
   double E_D;
   double E_B;
-  double ALPHA_R;
-  double ALPHA_L;
-  bool UPDATE_ODOM;
+  bool PUBLISH_PATH;
   bool DYNAMIC_COVARIANCE;
+  bool PUBLISH_TF;
   std::string LIMIT_COVARIANCE;
 
   //time instances because rclcpp is a mess with time and header stamps
   rclcpp::Time oldTime;
   rclcpp::Time newTime;
+
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
 };
 

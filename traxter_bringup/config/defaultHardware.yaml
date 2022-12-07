@@ -9,15 +9,42 @@
         _initial_x: 0.0
         _initial_y: 0.0
         _initial_theta: 0.0
-        _alpha_R: 1.0
-        _alpha_L: 1.0
         _k_R: 0.0005
         _k_L: 0.0005
-        _E_D: 1.0
-        _E_B: 1.4
+        _E_D: 0.98356
+        _E_B: 1.45155
+        _alpha_dist: 1.0 #1.0798
+        _alpha_yaw: 1.0 #1.0702
         _update_odometry: false
         _dynamic_covariance: false
+        _publish_odom_tf: false
+        _publish_odom_path: false
+
+        _limit_covariance: "[[0.04,0.0,0.0],[0.0,0.09,0.0],[0.0,0.0,0.007615]]"
 #For IMU
-        _orientation_covariance: "[[0.0, 0.0,  0.0], [0.0, 0.0,  0.0], [0.0, 0.0,  0.0001826]]"
-        _angular_velocity_covariance: "[[2.439e-05, 5.169e-07,  -2.577e-07], [5.169e-07, 6.305e-06,  -2.786e-07], [-2.577e-07, -2.786e-07,  2.267e-05]]"
-        _linear_acceleration_covariance: "[[0.0001661, -9.742e-06,  -2.256e-05], [-9.742e-06, 0.0001219,  2.224e-05], [-2.256e-05, 2.224e-05,  0.0004139]]"
+        _orientation_covariance: "[[1.63e-08, 0.0,  0.0], [0.0, 3.435e-09,  0.0], [0.0, 0.0,  0.001507]]"
+        _angular_velocity_covariance: "[[0.0001552, 0.0,  0.0], [0.0, 0.000146,  0.0], [0.0, 0.0,  7.454e-03]]"
+        _linear_acceleration_covariance: "[[0.01916, 0.0,  0.0], [0.0, 0.01971,  0.0], [0.0, 0.0,  0.09099]]"
+#For Hokuyo LiDAR:
+        ip_address: ""
+        #ip_port: 10940
+        serial_port: "/dev/ttyACM-HOKUYO"
+        serial_baud: 115200
+        laser_frame_id: hokuyo
+        angle_max: 2.60
+        angle_min: -2.60
+        publish_intensity: false
+        publish_multiecho: false
+        calibrate_time: false
+        default_user_latency: 0.0
+        diagnostics_tolerance: 0.05
+        diagnostics_window_time: 5.0
+        error_limit: 4
+        get_detailed_status: false
+        cluster: 1
+        skip: 0 
+
+#For controller feedback
+        _controller_feedback_intensity: 0.3
+        _controller_feedback_distance: 0.2
+

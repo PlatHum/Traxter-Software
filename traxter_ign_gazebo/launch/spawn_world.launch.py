@@ -48,7 +48,7 @@ def generate_launch_description():
             os.path.join(pkg_ign_gazebo_ros, 'launch', 'ign_gazebo.launch.py'),
         ),
         launch_arguments={
-            'ign_args': [PathJoinSubstitution([gazebo_models_path, world])]
+            'ign_args': ['-r ', PathJoinSubstitution([gazebo_models_path, world])]
         }.items(),
     )
 
@@ -65,7 +65,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
           'world',
-          default_value='test.sdf',
+          default_value='test_v2.sdf',
           description='World to spawn. Has to be a SDF world file inside /worlds folder'),
         ign_gazebo
     ])

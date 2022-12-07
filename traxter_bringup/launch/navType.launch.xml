@@ -1,4 +1,7 @@
 <launch>
+<!-- launches the navigation. If manual, then launches the ps3 controller nodes.
+Right now there is no other mode, but if there is high-level motion-control, then 
+this launcher can be updated -->
 
   <arg name="navType" default="manual" />
   <group if="$(eval '\'$(var navType)\' == \'manual\'')">

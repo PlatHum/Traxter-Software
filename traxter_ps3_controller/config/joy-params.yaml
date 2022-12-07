@@ -2,7 +2,7 @@
 joy_node:
     ros__parameters:
         device_name: "Sony PLAYSTATION(R)3 Controller"
-        deadzone: 0.1
-        autorepeat_rate: 10.0
+        deadzone: 0.02
+        autorepeat_rate: 20.0
         sticky_buttons: false
         coalesce_interval_ms: 1
