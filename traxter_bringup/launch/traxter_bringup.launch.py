@@ -67,14 +67,8 @@ def generate_launch_description():
 
     sensorType_arg = DeclareLaunchArgument(
           'sensorType',
-          default_value='all',
+          default_value='none',
           description='What sensors to launch. [all, perception, hokuyo, realsense, lowlevel]')
-
-    traxter_description_launch = IncludeLaunchDescription(
-      PythonLaunchDescriptionSource([os.path.join(
-         get_package_share_directory('traxter_description'), 'launch',
-         'traxter_description.launch.py')])
-      ) 
 
     runType_launch = IncludeLaunchDescription(
             [os.path.join(get_package_share_directory('traxter_bringup'), 'launch','runType.launch.xml')],

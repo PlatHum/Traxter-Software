@@ -18,7 +18,7 @@ def generate_launch_description():
         description='Use simulation/Gazebo clock')
     declare_slam_params_file_cmd = DeclareLaunchArgument(
         'slam_params_file',
-        default_value='realAsync.yaml',
+        default_value='realTools.yaml',
         description='Name of the ROS2 parameters file to use for the slam_toolbox node')
 
 

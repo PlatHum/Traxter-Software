@@ -1,6 +1,6 @@
 <launch>    
-    <!-- launches the sensors of the robot. ONly applicable if in real hardware -->
-    <arg name="sensorType" default= "all" />
+    <!-- launches the sensors of the robot. Only applicable if in real hardware -->
+    <arg name="sensorType" default= "none" />
 
 
 
