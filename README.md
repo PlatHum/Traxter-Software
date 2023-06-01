@@ -43,7 +43,5 @@ This work was developed by Francisco Gonçalves to obtain the Master of Science 
 
 Videos of the TIR-ANT working are made available on [TIR-ANT's Youtube channel](https://www.youtube.com/channel/UCXVvlVw6OO0v1a0kCItt89w).
 
-The dissertation of the project is available at: [Instituto Superior Técnico's Digital Library](https://fenix.tecnico.ulisboa.pt/cursos/memec21/dissertacao/846778572213978)
-
-The extended abstract is available at: [Instituto Superior Técnico's Digital Library](https://fenix.tecnico.ulisboa.pt/cursos/memec21/dissertacao/846778572213978)
+The dissertation on the project and its extended abstract are available at: [Instituto Superior Técnico's Digital Library](https://scholar.tecnico.ulisboa.pt/records/irGu-6ShIq7HTtxfuSsroVc8BTfj2L3tptYV)
 
